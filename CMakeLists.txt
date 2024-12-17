@@ -1,3 +1,9 @@
+# Allow using MSVC_DEBUG_INFORMATION_FORMAT instead of string-replacing /Zi for ccache compatibility
+# Yes, this really does need to be here
+if(POLICY CMP0141)
+    cmake_policy(SET CMP0141 NEW)
+endif()
+
 project(OpenMW)
 cmake_minimum_required(VERSION 3.1.0)
 set(CMAKE_CXX_STANDARD 17)
@@ -721,7 +727,7 @@ if (WIN32)
         4127 # Conditional expression is constant
         4996 # Function was declared deprecated
         )
-    
+
     if( "${MyGUI_VERSION}" VERSION_LESS_EQUAL "3.4.0" )
         set(WARNINGS_DISABLE ${WARNINGS_DISABLE}
         4866 # compiler may not enforce left-to-right evaluation order for call
@@ -743,7 +749,7 @@ if (WIN32)
     if (BUILD_OPENMW)
         set_target_properties(osg-ffmpeg-videoplayer PROPERTIES COMPILE_FLAGS "${WARNINGS} ${MT_BUILD}")
     endif()
-    
+
     if (MSVC_VERSION GREATER_EQUAL 1915 AND MSVC_VERSION LESS 1920)
         target_compile_definitions(components INTERFACE _ENABLE_EXTENDED_ALIGNED_STORAGE)
     endif()
