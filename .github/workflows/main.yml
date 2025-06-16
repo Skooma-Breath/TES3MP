@@ -33,11 +33,10 @@ jobs:
           7z x -y CrabNet.7z -oextern/raknet
           sudo apt-get install -y libluajit-5.1-dev
 
-      - name: Install GTest from source
+      - name: Build GTest
         run: |
-          sudo apt-get install -y cmake libgtest-dev
           cd /usr/src/gtest
-          sudo cmake -DBUILD_SHARED_LIBS=ON .
+          sudo cmake .
           sudo make -j$(nproc)
           sudo cp lib/*.a /usr/lib
 
