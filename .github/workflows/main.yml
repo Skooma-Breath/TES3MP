@@ -33,6 +33,16 @@ jobs:
           7z x -y CrabNet.7z -oextern/raknet
           sudo apt-get install -y libluajit-5.1-dev
 
+      - name: Install GTest from source
+        run: |
+          sudo apt-get install -y cmake libgtest-dev
+          cd /usr/src/gtest
+          sudo cmake -DBUILD_SHARED_LIBS=ON .
+          sudo make -j$(nproc)
+          sudo cp *.so /usr/lib
+          sudo cp *.a /usr/lib
+
+
       - name: Prime ccache
         uses: hendrikmuhs/ccache-action@v1.2
         with:
