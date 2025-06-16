@@ -33,6 +33,9 @@ jobs:
           7z x -y CrabNet.7z -oextern/raknet
           sudo apt-get install -y libluajit-5.1-dev
 
+      - name: Install Doxygen
+        run: sudo apt-get install -y doxygen
+
       - name: Build and Install GTest (v1.10.0)
         run: |
           sudo apt-get install -y cmake ninja-build
