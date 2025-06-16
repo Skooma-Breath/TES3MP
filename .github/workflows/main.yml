@@ -39,7 +39,6 @@ jobs:
           cd /usr/src/gtest
           sudo cmake -DBUILD_SHARED_LIBS=ON .
           sudo make -j$(nproc)
-          sudo cp *.so /usr/lib
           sudo cp *.a /usr/lib
 
 
