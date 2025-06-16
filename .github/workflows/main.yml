@@ -39,7 +39,7 @@ jobs:
           cd /usr/src/gtest
           sudo cmake -DBUILD_SHARED_LIBS=ON .
           sudo make -j$(nproc)
-          sudo cp *.a /usr/lib
+          sudo cp lib/*.a /usr/lib
 
 
       - name: Prime ccache
