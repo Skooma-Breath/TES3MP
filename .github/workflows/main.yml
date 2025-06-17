@@ -31,10 +31,10 @@ jobs:
       - name: Make script executable
         run: chmod +x CI/make_package.ubuntu.sh
 
-      - name: Run packaging
-        run: |
-          echo "Running packaging script:"
-          ./CI/make_package.ubuntu.sh || (echo "Script failed"; exit 1)
+      # - name: Run packaging
+      #   run: |
+      #     echo "Running packaging script:"
+      #     ./CI/make_package.ubuntu.sh || (echo "Script failed"; exit 1)
 
       - name: Add OpenMW PPA Dependencies
         run: sudo add-apt-repository ppa:openmw/openmw; sudo apt-get update
