@@ -72,14 +72,14 @@ jobs:
       - name: List Build Targets
         run: cmake --build . --target help
 
-      - name: Build
-        run: make -j$(nproc)
+      # - name: Build
+      #   run: make -j$(nproc)
 
       # - name: Build tes3mp-server
       #   run: cmake --build . --target all -- -j$(nproc) VERBOSE=1 | tee full_build.log
 
-      # - name: Build All
-      #   run: cmake --build build --target all tes3mp-server -- -j$(nproc) VERBOSE=1 | tee full_build.log
+      - name: Build All
+        run: cmake --build build --target tes3mp-server -- -j$(nproc) VERBOSE=1 | tee full_build.log
 
       # - name: Test
         # run: ./openmw_test_suite
