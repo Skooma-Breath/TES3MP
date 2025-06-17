@@ -3,7 +3,12 @@
 set -e
 
 PACKAGE_BINARIES=( \
+                   "tes3mp" \
+                       "tes3mp-browser" \
                        "tes3mp-server" \
+                       "openmw-launcher" \
+                       "openmw-wizard" \
+                       "openmw-iniimporter" \
     )
 
 #WARN: Linking libtinyxml shouldn't be needed, no version of openmw uses this and it seems to be something weird caused by GitHub CI. Whether this is a problem is tbd.
