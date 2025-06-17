@@ -116,20 +116,6 @@ jobs:
           ls -la apps/openmw-mp/
           echo "Full search:"
           find . -name tes3mp-server
-    
-      # - name: Build and Verify
-      #   run: |
-      #     # Build specifically the server
-      #     cmake --build . --target tes3mp-server
-    
-      #     # Verify binary exists
-      #     if [ -f "apps/openmw-mp/tes3mp-server" ]; then
-      #         echo "Server built successfully"
-      #     else
-      #         echo "Build failed - binary not found"
-      #         find . -name "*tes3mp*"
-      #         exit 1
-      #     fi
 
       - name: Install Server Only
         shell: bash
@@ -140,7 +126,12 @@ jobs:
 
       - name: Create Artifact
         shell: bash
-        run: sudo CI/make_package.ubuntu.sh
+        run: |
+          # Make sure we're in root directory
+          cd $GITHUB_WORKSPACE  
+          sudo CI/make_package.ubuntu.sh
+          # Verify package contents
+          tar tzf tes3mp_linux.tar | grep bin/tes3mp-server
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
