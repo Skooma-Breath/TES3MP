@@ -49,7 +49,7 @@ jobs:
 
         # Add this section: Build RecastNavigation from source
         RUN mkdir -p /tmp/recastnavigation && cd /tmp/recastnavigation && \
-            git clone --branch recastnavigation/1.6.0 https://github.com/recastnavigation/recastnavigation.git . && \
+            git clone --depth 1 --branch v1.6.0 https://github.com/recastnavigation/recastnavigation.git . && \
             mkdir build && cd build && \
             cmake .. -DCMAKE_BUILD_TYPE=Release -DRECASTNAVIGATION_DEMO=OFF -DRECASTNAVIGATION_TESTS=OFF && \
             make -j$(nproc) && \
