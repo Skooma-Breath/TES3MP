@@ -110,12 +110,12 @@ jobs:
       # In your CI workflow, replace the verification step with:
       - name: Verify Binary
         run: |
-          echo "Checking common binary locations:"
-          find . -name tes3mp-server* -type f
+          echo "Checking for tes3mp-server in root directory:"
+          ls -la tes3mp-server || echo "Not found in root"
           echo "Checking build directory:"
           ls -la apps/openmw-mp/
-          echo "Checking root directory:"
-          ls -la
+          echo "Full search:"
+          find . -name tes3mp-server
     
       # - name: Build and Verify
       #   run: |
