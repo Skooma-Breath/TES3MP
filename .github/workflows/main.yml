@@ -79,7 +79,7 @@ jobs:
       #   run: cmake --build . --target all -- -j$(nproc) VERBOSE=1 | tee full_build.log
 
       - name: Build All
-        run: cmake --build build --target tes3mp-server -- -j$(nproc) VERBOSE=1 | tee full_build.log
+        run: cmake --build . --target tes3mp-server -- -j$(nproc) VERBOSE=1 | tee full_build.log
 
       # - name: Test
         # run: ./openmw_test_suite
