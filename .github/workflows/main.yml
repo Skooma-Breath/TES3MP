@@ -70,11 +70,11 @@ jobs:
 
       
       - name: List Build Targets
-        run: cmake --build build --target help
+        run: cmake --build . --target help
 
      
       - name: Build tes3mp-server
-        run: cmake --build build --target tes3mp-server -- -j$(nproc) VERBOSE=1 | tee full_build.log
+        run: cmake --build . --target tes3mp-server -- -j$(nproc) VERBOSE=1 | tee full_build.log
 
       # - name: Build All
       #   run: cmake --build build --target all tes3mp-server -- -j$(nproc) VERBOSE=1 | tee full_build.log
