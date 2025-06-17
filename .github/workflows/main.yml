@@ -72,8 +72,11 @@ jobs:
       - name: List Build Targets
         run: cmake --build build --target help
 
-      - name: Build tes3mp-server
-        run: cmake --build build --target tes3mp-server -- -j$(nproc) VERBOSE=1 | tee full_build.log
+      - name: Build
+        run: make -j$(nproc)
+
+      # - name: Build tes3mp-server
+      #   run: cmake --build build --target tes3mp-server -- -j$(nproc) VERBOSE=1 | tee full_build.log
 
       # - name: Build All
       #   run: cmake --build build --target all tes3mp-server -- -j$(nproc) VERBOSE=1 | tee full_build.log
@@ -81,11 +84,14 @@ jobs:
       # - name: Test
         # run: ./openmw_test_suite
 
+      # - name: Install
+      #   shell: bash
+      #   run: cmake --install build
+
       - name: Install
         shell: bash
-        run: cmake --install build
-
-
+        run: cmake --install .
+        
       - name: Create Artifact
         shell: bash
         run: sudo CI/make_package.ubuntu.sh
