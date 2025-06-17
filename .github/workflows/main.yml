@@ -97,9 +97,9 @@ jobs:
           echo "=== TES3MP target info ==="
           grep -r "tes3mp" apps/openmw/CMakeLists.txt
 
-      - name: Install
+      - name: Install Server Only
         shell: bash
-        run: cmake --install .
+        run: cmake --install . --component tes3mp-server
         
       - name: Create Artifact
         shell: bash
