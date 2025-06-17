@@ -159,14 +159,6 @@ add_executable(tes3mp-server
         ${APPLE_BUNDLE_RESOURCES}
         )
 
- set_target_properties(tes3mp-server PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}
-)
-
-install(TARGETS tes3mp-server
-    RUNTIME DESTINATION bin
-)
-
 target_compile_options(tes3mp-server PRIVATE $<$<CXX_COMPILER_ID:MSVC>:/permissive->)
 
 if (OPENMW_MP_BUILD)
