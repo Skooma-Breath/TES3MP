@@ -1,0 +1,87 @@
+name: ARM64 Build
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      BUILD_TYPE: Release
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup ARM64 environment
+      run: |
+        # Install cross-compilation tools
+        sudo apt-get update
+        sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+        
+        # Install ARM64 dependencies
+        sudo apt-get install -y \
+            libluajit-5.1-dev:arm64 \
+            liblua5.1-dev:arm64 \
+            libboost-system-dev:arm64 \
+            libboost-thread-dev:arm64 \
+            libsdl2-dev:arm64 \
+            libopenal-dev:arm64 \
+            libbullet-dev:arm64 \
+            libmygui-dev:arm64
+        
+        # Configure RakNet for ARM64
+        cd extern/raknet
+        cmake . -DCMAKE_TOOLCHAIN_FILE=../toolchain-arm64.cmake
+        make -j$(nproc)
+        cd ../..
+      
+    - name: Create ARM64 toolchain file
+      run: |
+        cat << EOF > toolchain-arm64.cmake
+        set(CMAKE_SYSTEM_NAME Linux)
+        set(CMAKE_SYSTEM_PROCESSOR aarch64)
+        
+        set(CMAKE_C_COMPILER aarch64-linux-gnu-gcc)
+        set(CMAKE_CXX_COMPILER aarch64-linux-gnu-g++)
+        
+        set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
+        set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
+        set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
+        set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
+        EOF
+        
+    - name: Configure CMake for ARM64
+      run: |
+        mkdir build-arm64
+        cd build-arm64
+        cmake .. \
+          -DCMAKE_TOOLCHAIN_FILE=../toolchain-arm64.cmake \
+          -DBUILD_OPENMW=OFF \
+          -DBUILD_OPENMW_MP=ON \
+          -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} \
+          -DCMAKE_INSTALL_PREFIX=install-arm64
+        
+    - name: Build TES3MP Server
+      run: |
+        cd build-arm64
+        cmake --build . --target tes3mp-server -- -j$(nproc)
+        
+    - name: Verify ARM64 binary
+      run: |
+        file build-arm64/apps/openmw-mp/tes3mp-server
+        # Should show: ELF 64-bit LSB pie executable, ARM aarch64, version 1 (SYSV)...
+        
+    - name: Package artifacts
+      run: |
+        mkdir -p package-arm64/bin
+        cp build-arm64/apps/openmw-mp/tes3mp-server package-arm64/bin/
+        cp tes3mp-server-default.cfg package-arm64/
+        tar czf tes3mp-server-arm64.tar.gz -C package-arm64 .
+        
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: tes3mp-server-arm64
+        path: tes3mp-server-arm64.tar.gz
