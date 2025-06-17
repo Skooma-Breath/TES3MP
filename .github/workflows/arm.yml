@@ -41,12 +41,20 @@ jobs:
             libopenal-dev \
             libbullet-dev \
             libmygui-dev \
-            librecastnavigation-dev \
             qtbase5-dev \
             libqt5opengl5-dev \
             p7zip-full \
             wget \
             && rm -rf /var/lib/apt/lists/*
+
+        # Add this section: Build RecastNavigation from source
+        RUN mkdir -p /tmp/recastnavigation && cd /tmp/recastnavigation && \
+            git clone --branch recastnavigation/1.6.0 https://github.com/recastnavigation/recastnavigation.git . && \
+            mkdir build && cd build && \
+            cmake .. -DCMAKE_BUILD_TYPE=Release -DRECASTNAVIGATION_DEMO=OFF -DRECASTNAVIGATION_TESTS=OFF && \
+            make -j$(nproc) && \
+            make install && \
+            cd / && rm -rf /tmp/recastnavigation
 
         # Build RakNet from source
         RUN mkdir -p /tmp/raknet && cd /tmp/raknet && \
