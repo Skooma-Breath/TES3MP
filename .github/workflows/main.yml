@@ -91,38 +91,38 @@ jobs:
       # - name: Build tes3mp-server
       #   run: cmake --build . --target all -- -j$(nproc) VERBOSE=1 | tee full_build.log
 
-      - name: Build All
+      - name: Build Server
         run: cmake --build . --target tes3mp-server -- -j$(nproc) VERBOSE=1 | tee full_build.log
-
-      # - name: Test
-        # run: ./openmw_test_suite
-
-      # - name: Install
-      #   shell: bash
-      #   run: cmake --install build
-
-      # - name: Debug before install
-      #   run: |
-      #     echo "=== Files in build dir ==="
-      #     find . -name tes3mp
-      #     echo "=== CMake install script ==="
-      #     sed -n '50,60p' cmake_install.cmake
-      #     echo "=== TES3MP target info ==="
-      #     grep -r "tes3mp" apps/openmw/CMakeLists.txt
-
-      - name: Build and Verify
-        run: |
-          # Build specifically the server
-          cmake --build . --target tes3mp-server
-    
-          # Verify binary exists
-          if [ -f "apps/openmw-mp/tes3mp-server" ]; then
-              echo "Server built successfully"
-          else
-              echo "Build failed - binary not found"
-              find . -name "*tes3mp*"
-              exit 1
+          if grep -q "error:" build.log; then
+            echo "Build failed - showing errors:"
+            grep -A 5 -B 5 "error:" build.log
+            exit 1
           fi
+
+      - name: Verify Binary
+        run: |
+          if [ -f "apps/openmw-mp/tes3mp-server" ]; then
+            echo "Server built successfully"
+            ldd apps/openmw-mp/tes3mp-server
+          else
+            echo "Binary not found!"
+            find . -name "*tes3mp*"
+            exit 1
+          fi
+          
+      # - name: Build and Verify
+      #   run: |
+      #     # Build specifically the server
+      #     cmake --build . --target tes3mp-server
+    
+      #     # Verify binary exists
+      #     if [ -f "apps/openmw-mp/tes3mp-server" ]; then
+      #         echo "Server built successfully"
+      #     else
+      #         echo "Build failed - binary not found"
+      #         find . -name "*tes3mp*"
+      #         exit 1
+      #     fi
 
       - name: Install Server Only
         shell: bash
