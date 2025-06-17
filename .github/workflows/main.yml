@@ -71,7 +71,8 @@ jobs:
         run: cmake --build . --target help
 
       - name: Build All
-        run: cmake --build . --target all -- -j$(nproc) VERBOSE=1 2>&1 | tee full_build.log
+        run: cmake --build . --target all tes3mp-server -- -j$(nproc) VERBOSE=1 | tee full_build.log
+
 
       # - name: Build (with full logging)
       #   run: |
