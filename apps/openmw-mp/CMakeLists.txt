@@ -159,6 +159,10 @@ add_executable(tes3mp-server
         ${APPLE_BUNDLE_RESOURCES}
         )
 
+ set_target_properties(tes3mp-server PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}
+)
+
 install(TARGETS tes3mp-server
     RUNTIME DESTINATION bin
 )
