@@ -91,25 +91,30 @@ jobs:
       # - name: Build tes3mp-server
       #   run: cmake --build . --target all -- -j$(nproc) VERBOSE=1 | tee full_build.log
 
-      - name: Build Server
-        run: cmake --build . --target tes3mp-server -- -j$(nproc) VERBOSE=1 | tee full_build.log
-          if grep -q "error:" build.log; then
-            echo "Build failed - showing errors:"
-            grep -A 5 -B 5 "error:" build.log
-            exit 1
+      - name: Build and Debug
+        run: |
+          # Build with verbose output
+          cmake --build . --target tes3mp-server -- -j$(nproc) VERBOSE=1 2>&1 | tee full_build.log
+    
+          # Check for errors
+          if grep -q "error:" full_build.log; then
+              echo "=== BUILD ERRORS ==="
+              grep -A 10 -B 5 -i "error:" full_build.log
+              echo "=== CRITICAL WARNINGS ==="
+              grep -A 5 -i "warning:" full_build.log | grep -i "critical\|fatal"
+              echo "=== MAIN.CPP ERRORS ==="
+              grep -A 15 -B 5 -i "main.cpp" full_build.log
+              exit 1
           fi
 
-      - name: Verify Binary
-        run: |
-          if [ -f "apps/openmw-mp/tes3mp-server" ]; then
-            echo "Server built successfully"
-            ldd apps/openmw-mp/tes3mp-server
-          else
-            echo "Binary not found!"
-            find . -name "*tes3mp*"
-            exit 1
+          # Verify binary was created
+          if [ ! -f "apps/openmw-mp/tes3mp-server" ]; then
+              echo "ERROR: Binary not created!"
+              echo "Possible compiled files:"
+              find . -name "*.o" | grep -i tes3mp
+              exit 1
           fi
-          
+    
       # - name: Build and Verify
       #   run: |
       #     # Build specifically the server
