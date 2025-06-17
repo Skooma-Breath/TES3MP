@@ -4,29 +4,16 @@ set -e
 #!/usr/bin/env bash
 set -e
 
-# Check for binary in standard install locations
-SEARCH_PATHS=(
-    "tes3mp-server"
-    "apps/openmw-mp/tes3mp-server"
-    "build/apps/openmw-mp/tes3mp-server"
-    "install/bin/tes3mp-server"
-)
-
-found=false
-for path in "${SEARCH_PATHS[@]}"; do
-    if [[ -f "$path" ]]; then
-        echo "Found tes3mp-server at: $path"
-        mkdir -p package/bin
-        cp -v "$path" package/bin/
-        found=true
-        break
-    fi
-done
-
-if ! $found; then
-    echo "ERROR: tes3mp-server binary not found in any standard location!"
-    echo "Full system search results:"
-    find . -name "*tes3mp*" -type f
+# Check for binary in root directory first
+if [[ -f "tes3mp-server" ]]; then
+    echo "Found tes3mp-server in root directory"
+    mkdir -p package/bin
+    mv -v tes3mp-server package/bin/
+else
+    echo "ERROR: tes3mp-server not found in root directory!"
+    echo "Current directory: $(pwd)"
+    echo "Directory contents:"
+    ls -la
     exit 1
 fi
 
