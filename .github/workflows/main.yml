@@ -110,9 +110,26 @@ jobs:
       #     echo "=== TES3MP target info ==="
       #     grep -r "tes3mp" apps/openmw/CMakeLists.txt
 
+      - name: Build and Verify
+        run: |
+          # Build specifically the server
+          cmake --build . --target tes3mp-server
+    
+          # Verify binary exists
+          if [ -f "apps/openmw-mp/tes3mp-server" ]; then
+              echo "Server built successfully"
+          else
+              echo "Build failed - binary not found"
+              find . -name "*tes3mp*"
+              exit 1
+          fi
+
       - name: Install Server Only
         shell: bash
-        run: cmake --install . --component tes3mp-server
+        run: |
+          mkdir -p install
+          cmake --install . --component tes3mp-server --prefix $PWD/install
+          ls -la install/bin/
 
       - name: Create Artifact
         shell: bash
