@@ -55,7 +55,9 @@ jobs:
           max-size: 1000M
 
       - name: Configure
-        run: cmake . \
+        run: 
+          cmake -S . -B build \
+          rm -rf CMakeCache.txt CMakeFiles/ build/
           -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} \
           -DCMAKE_C_COMPILER_LAUNCHER=ccache \
           -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
