@@ -88,6 +88,15 @@ jobs:
       #   shell: bash
       #   run: cmake --install build
 
+      - name: Debug before install
+        run: |
+          echo "=== Files in build dir ==="
+          find . -name tes3mp
+          echo "=== CMake install script ==="
+          sed -n '50,60p' cmake_install.cmake
+          echo "=== TES3MP target info ==="
+          grep -r "tes3mp" apps/openmw/CMakeLists.txt
+
       - name: Install
         shell: bash
         run: cmake --install .
