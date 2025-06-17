@@ -55,39 +55,35 @@ jobs:
           max-size: 1000M
 
       - name: Configure
-        run: 
+        run: |
           cmake -S . -B build \
           rm -rf CMakeCache.txt CMakeFiles/ build/
-          -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} \
-          -DCMAKE_C_COMPILER_LAUNCHER=ccache \
-          -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
-          -DBUILD_UNITTESTS=ON \
-          -DCMAKE_INSTALL_PREFIX=install \
-          -DCMAKE_CXX_STANDARD=14 \
-          -DCMAKE_CXX_FLAGS="-std=c++14" \
-          -DDESIRED_QT_VERSION=5 \
-          -DBUILD_OPENMW_MP=ON
+            -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} \
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DBUILD_UNITTESTS=ON \
+            -DCMAKE_INSTALL_PREFIX=install \
+            -DCMAKE_CXX_STANDARD=14 \
+            -DCMAKE_CXX_FLAGS="-std=c++14" \
+            -DDESIRED_QT_VERSION=5 \
+            -DBUILD_OPENMW_MP=ON
 
       
       - name: List Build Targets
-        run: cmake --build . --target help
+        run: cmake --build build --target help
 
-      - name: Build All
-        run: cmake --build . --target all tes3mp-server -- -j$(nproc) VERBOSE=1 | tee full_build.log
+      - name: Build tes3mp-server
+        run: cmake --build build --target tes3mp-server -- -j$(nproc) VERBOSE=1 | tee full_build.log
 
-
-      # - name: Build (with full logging)
-      #   run: |
-      #     make -j$(nproc) VERBOSE=1 2>&1 | tee full_build.log
-
-
+      # - name: Build All
+      #   run: cmake --build build --target all tes3mp-server -- -j$(nproc) VERBOSE=1 | tee full_build.log
 
       # - name: Test
         # run: ./openmw_test_suite
 
       - name: Install
-        shell: bash
-        run: cmake --install .
+        run: cmake --install build
+
 
       - name: Create Artifact
         shell: bash
