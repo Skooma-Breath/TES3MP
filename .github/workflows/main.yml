@@ -122,7 +122,10 @@ jobs:
         run: |
           mkdir -p install
           cmake --install . --component tes3mp-server --prefix $PWD/install
-          ls -la install/bin/
+          ls -la .
+          ls -la ..
+          ls -la ..
+          ls -la ..
 
       - name: Create Artifact
         shell: bash
