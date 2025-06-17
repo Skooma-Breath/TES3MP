@@ -159,6 +159,10 @@ add_executable(tes3mp-server
         ${APPLE_BUNDLE_RESOURCES}
         )
 
+install(TARGETS tes3mp-server
+    RUNTIME DESTINATION bin
+)
+
 target_compile_options(tes3mp-server PRIVATE $<$<CXX_COMPILER_ID:MSVC>:/permissive->)
 
 if (OPENMW_MP_BUILD)
@@ -206,7 +210,3 @@ if (MSVC)
     endif (CMAKE_CL_64)
     add_definitions("-D_USE_MATH_DEFINES")
 endif (MSVC)
-
-install(TARGETS tes3mp-server
-    RUNTIME DESTINATION bin
-)
