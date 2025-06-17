@@ -56,8 +56,8 @@ jobs:
 
       - name: Configure
         run: |
-          cmake -S . -B build \
           rm -rf CMakeCache.txt CMakeFiles/ build/
+          cmake -S . -B build \
             -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} \
             -DCMAKE_C_COMPILER_LAUNCHER=ccache \
             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
