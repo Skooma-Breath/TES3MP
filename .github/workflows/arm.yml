@@ -1,4 +1,4 @@
-name: ARM64 Build
+name: ARM64 Cross-Compile Build
 
 on:
   push:
@@ -7,78 +7,98 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
-    env:
-      BUILD_TYPE: Release
+    runs-on: ubuntu-22.04
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
       
-    - name: Setup ARM64 environment
+    - name: Setup cross-compilation environment
       run: |
-        # Install cross-compilation tools
         sudo apt-get update
-        sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
-        
-        # Install ARM64 dependencies
         sudo apt-get install -y \
-            libluajit-5.1-dev:arm64 \
-            liblua5.1-dev:arm64 \
-            libboost-system-dev:arm64 \
-            libboost-thread-dev:arm64 \
-            libsdl2-dev:arm64 \
-            libopenal-dev:arm64 \
-            libbullet-dev:arm64 \
-            libmygui-dev:arm64
+            gcc-aarch64-linux-gnu \
+            g++-aarch64-linux-gnu \
+            cmake \
+            ninja-build \
+            ccache \
+            qemu-user-static
         
-        # Configure RakNet for ARM64
-        cd extern/raknet
-        cmake . -DCMAKE_TOOLCHAIN_FILE=../toolchain-arm64.cmake
-        make -j$(nproc)
-        cd ../..
-      
-    - name: Create ARM64 toolchain file
+        # Create sysroot directory
+        sudo mkdir -p /sysroot/usr
+        sudo chown -R $USER:$USER /sysroot
+        
+    - name: Create toolchain file
       run: |
-        cat << EOF > toolchain-arm64.cmake
+        cat << EOF > toolchain.cmake
         set(CMAKE_SYSTEM_NAME Linux)
         set(CMAKE_SYSTEM_PROCESSOR aarch64)
         
         set(CMAKE_C_COMPILER aarch64-linux-gnu-gcc)
         set(CMAKE_CXX_COMPILER aarch64-linux-gnu-g++)
         
+        set(CMAKE_FIND_ROOT_PATH /sysroot)
         set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
         set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
         set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
         set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
+        
+        set(BOOST_ROOT /sysroot/usr)
+        set(ENV{PKG_CONFIG_PATH} /sysroot/usr/lib/aarch64-linux-gnu/pkgconfig)
+        set(ENV{PKG_CONFIG_LIBDIR} /sysroot/usr/lib/aarch64-linux-gnu/pkgconfig)
         EOF
         
-    - name: Configure CMake for ARM64
+    - name: Install ARM64 dependencies in sysroot
       run: |
-        mkdir build-arm64
-        cd build-arm64
-        cmake .. \
-          -DCMAKE_TOOLCHAIN_FILE=../toolchain-arm64.cmake \
-          -DBUILD_OPENMW=OFF \
-          -DBUILD_OPENMW_MP=ON \
-          -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} \
-          -DCMAKE_INSTALL_PREFIX=install-arm64
+        # Install ARM64 libraries into sysroot
+        sudo apt-get install -y \
+            libluajit-5.1-dev:arm64 \
+            liblua5.1-0-dev:arm64 \
+            libboost-system-dev:arm64 \
+            libboost-thread-dev:arm64 \
+            libsdl2-dev:arm64 \
+            libopenal-dev:arm64 \
+            libbullet-dev:arm64 \
+            libmygui-dev:arm64 \
+            --reinstall -o Dir::Cache="/var/cache/apt/archives" -o Dir::State::lists="lists.arm64"
         
-    - name: Build TES3MP Server
+        # Copy installed packages to sysroot
+        sudo cp -r /usr/aarch64-linux-gnu /sysroot/usr/
+        sudo cp -r /usr/include/aarch64-linux-gnu /sysroot/usr/include/
+        sudo cp -r /usr/lib/aarch64-linux-gnu /sysroot/usr/lib/
+        
+    - name: Build RakNet
       run: |
-        cd build-arm64
-        cmake --build . --target tes3mp-server -- -j$(nproc)
+        cd extern/raknet
+        cmake -B build -G Ninja \
+            -DCMAKE_TOOLCHAIN_FILE=../../toolchain.cmake \
+            -DCMAKE_INSTALL_PREFIX=/sysroot/usr
+        cmake --build build
+        cmake --install build
+        cd ../..
+        
+    - name: Configure and build TES3MP Server
+      run: |
+        cmake -B build -G Ninja \
+            -DCMAKE_TOOLCHAIN_FILE=toolchain.cmake \
+            -DBUILD_OPENMW=OFF \
+            -DBUILD_OPENMW_MP=ON \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DOPENMW_USE_SYSTEM_BULLET=ON \
+            -DOPENMW_USE_SYSTEM_MYGUI=ON \
+            -DOPENMW_USE_SYSTEM_RECASTNAVIGATION=ON
+        
+        cmake --build build --target tes3mp-server
         
     - name: Verify ARM64 binary
       run: |
-        file build-arm64/apps/openmw-mp/tes3mp-server
-        # Should show: ELF 64-bit LSB pie executable, ARM aarch64, version 1 (SYSV)...
+        file build/apps/openmw-mp/tes3mp-server
         
     - name: Package artifacts
       run: |
-        mkdir -p package-arm64/bin
-        cp build-arm64/apps/openmw-mp/tes3mp-server package-arm64/bin/
-        cp tes3mp-server-default.cfg package-arm64/
-        tar czf tes3mp-server-arm64.tar.gz -C package-arm64 .
+        mkdir -p package/bin
+        cp build/apps/openmw-mp/tes3mp-server package/bin/
+        cp tes3mp-server-default.cfg package/
+        tar czf tes3mp-server-arm64.tar.gz -C package .
         
     - name: Upload artifact
       uses: actions/upload-artifact@v4
