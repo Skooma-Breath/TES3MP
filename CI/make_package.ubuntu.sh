@@ -1,102 +1,145 @@
 #!/usr/bin/env bash
+
 set -e
 
-# Check for binary in root directory first
-if [[ -f "tes3mp-server" ]]; then
-    echo "Found tes3mp-server in root directory"
-else
-    echo "ERROR: tes3mp-server not found in root directory!"
-    echo "Current directory: $(pwd)"
-    echo "Directory contents:"
-    ls -la
-    exit 1
-fi
+PACKAGE_BINARIES=( \
+                   "tes3mp" \
+                       "tes3mp-browser" \
+                       "tes3mp-server" \
+                       "openmw-launcher" \
+                       "openmw-wizard" \
+                       "openmw-iniimporter" \
+    )
 
-# Server-only configuration
-PACKAGE_BINARIES=("tes3mp-server")
-SERVER_LIBRARIES=(
-    "libRakNet.so"
-    "libboost_system.so"
-    "libboost_thread.so"
-    "libluajit-5.1.so"
-    "liblua5.1.so"
-    "libtinyxml.so"
-)
-SERVER_DEFAULTS=(
-    "tes3mp-server-default.cfg"
-    "LICENSE"
-)
+#WARN: Linking libtinyxml shouldn't be needed, no version of openmw uses this and it seems to be something weird caused by GitHub CI. Whether this is a problem is tbd.
+LIBRARIES=( \
+                   "libboost_thread.so" \
+                       "libboost_system.so" \
+                       "libboost_filesystem.so" \
+                       "libboost_program_options.so" \
+                       "libboost_iostreams.so" \
+                       "libBulletCollision.so" \
+                       "libLinearMath-float64.so" \
+                       "libBulletCollision-float64.so" \
+                       "libbz2.so" \
+                       "libLinearMath.so" \
+                       "libMyGUIEngine.so" \
+                       "libOpenThreads.so" \
+                       "libosgAnimation.so" \
+                       "libosgDB.so" \
+                       "libosgFX.so" \
+                       "libosgGA.so" \
+                       "libosgParticle.so" \
+                       "libosg.so" \
+                       "libosgText.so" \
+                       "libosgUtil.so" \
+                       "libosgViewer.so" \
+                       "libosgWidget.so" \
+                       "libosgShadow.so" \
+                       "libSDL2" \
+                       "libts.so" \
+                       "libtxc_dxtn.so" \
+                       "libunshield.so" \
+                       "libuuid.so" \
+                       "osgPlugins" \
+                       "libtinfo.so" \
+                       "liblua5.1.so" \
+                       "libpng16.so" \
+                       "libtinyxml.so" \
+    )
 
-# Create directory structure
-mkdir -p tes3mp-server/{bin,lib,server} 
+DEFAULTS=( \
+           "defaults.bin" \
+               "openmw.cfg" \
+               "gamecontrollerdb.txt" \
+               "tes3mp-client-default.cfg" \
+               "tes3mp-server-default.cfg" \
+               "tes3mp-credits.md" \
+               "tes3mp-changelog.md" \
+               "tes3mp-credits.md" \
+               "tes3mp-changelog.md" \
+               "AUTHORS.md" \
+               "LICENSE" \
+    )
 
-# Copy server binary
-if [ -f "install/bin/tes3mp-server" ]; then
-    cp -v install/bin/tes3mp-server tes3mp-server/bin/
-elif [ -f "build/apps/openmw-mp/tes3mp-server" ]; then
-    cp -v build/apps/openmw-mp/tes3mp-server tes3mp-server/bin/
-else
-    echo "ERROR: tes3mp-server binary not found!"
-    find . -name tes3mp-server
-    exit 1
-fi
+mkdir tes3mp-build tes3mp-build/lib/ && mv resources/ tes3mp-build/ && cd tes3mp-build
 
-# Copy required libraries
-for LIB in "${SERVER_LIBRARIES[@]}"; do
-    find /usr/lib /usr/local/lib /lib/x86_64-linux-gnu/ -name "$LIB*" \
-        -exec cp -v --preserve=links {} tes3mp-server/lib/ \; 2>/dev/null || true
+for LIB in "${LIBRARIES[@]}"; do
+    find /lib /usr/lib /usr/local/lib /usr/local/lib64 /lib/x86_64-linux-gnu/ ../raknet/ -name "$LIB*" -exec cp -r --preserve=links "{}" ./lib \; 2> /dev/null || true
+    echo -ne "$LIB\033[0K\r"
 done
 
-# Copy RakNet specifically
-find ../raknet/ -name "libRakNet.so*" -exec cp -v --preserve=links {} tes3mp-server/lib/ \;
-
-# Copy config files
-for DEFAULT in "${SERVER_DEFAULTS[@]}"; do
-    [ -f "$DEFAULT" ] && cp -v "$DEFAULT" tes3mp-server/
+for DEFAULT in "${DEFAULTS[@]}"; do
+    cp ../"$DEFAULT" .
 done
 
-# Get CoreScripts
-echo "Downloading CoreScripts..."
-git clone --depth 1 https://github.com/tes3mp-MP/CoreScripts.git tes3mp-server/server
+for BIN in "${PACKAGE_BINARIES[@]}"; do
+    cp -r ../$BIN .
+done
 
-# Download cjson
-echo "Downloading cjson..."
-mkdir -p tes3mp-server/server/lib
-curl -o tes3mp-server/server/lib/cjson.dll -L \
-    https://github.com/tes3mp-MP/lua-cjson/releases/download/Stable-CI/cjson-MinSizeRel.dll
+git clone https://github.com/tes3mp-MP/CoreScripts.git server/
 
-# Create server wrapper
-cat << 'EOF' > tes3mp-server/tes3mp-server
+echo "Acquiring cjson . . ."
+curl  -o server/lib/cjson.dll -L https://github.com/tes3mp-MP/lua-cjson/releases/download/Stable-CI/cjson-MinSizeRel.dll
+
+
+# Create pre-launch script
+cat << 'EOF' > tes3mp-prelaunch
 #!/bin/bash
+
+ARGS="$*"
 GAMEDIR="$(cd "$(dirname "$0")"; pwd -P)"
 TES3MP_HOME="$HOME/.config/openmw"
 
-# Handle server config
-if [[ -f "$TES3MP_HOME"/tes3mp-server.cfg ]]; then
-    echo "Using existing server config from $TES3MP_HOME"
-elif [[ -f "$GAMEDIR"/tes3mp-server-default.cfg ]]; then
-    echo "Using default server config from package"
-    mkdir -p "$TES3MP_HOME"
-    cp "$GAMEDIR"/tes3mp-server-default.cfg "$TES3MP_HOME"/tes3mp-server.cfg
+# If there are config files in the home directory, load those
+# Otherwise check the package/installation directory and load those
+# Otherwise copy them to the home directory
+if [[ "$ARGS" = 'tes3mp-server' ]]; then
+    if [[ -f "$TES3MP_HOME"/tes3mp-server.cfg ]]; then
+        echo -e "Loading server config from the home directory"
+        LOADING_FROM_HOME=true
+    elif [[ -f "$GAMEDIR"/tes3mp-server-default.cfg ]]; then
+        echo -e "Loading server config from the package directory"
+    else
+        echo -e "Server config not found in home and package directory, trying to copy from .example"
+        cp -f tes3mp-server-default.cfg.example "$TES3MP_HOME"/tes3mp-server.cfg
+        LOADING_FROM_HOME=true
+    fi
+    if [[ $LOADING_FROM_HOME ]]; then
+        if [[ -d "$TES3MP_HOME"/server ]]; then
+            echo -e "Loading CoreScripts folder from the home directory"
+        else
+            echo -e "CoreScripts folder not found in home directory, copying from package directory"
+            cp -rf "$GAMEDIR"/server/ "$TES3MP_HOME"/
+            sed -i "s|home = .*|home = $TES3MP_HOME/server |g" "$TES3MP_HOME"/tes3mp-server.cfg
+        fi
+    fi
+else
+    if [[ -f $TES3MP_HOME/tes3mp-client.cfg ]]; then
+        echo -e "Loading client config from the home directory"
+    elif [[ -f tes3mp-client-default.cfg ]]; then
+        echo -e "Loading client config from the package directory"
+    else
+        echo -e "Client config not found in home and package directory, trying to copy from .example"
+        cp -f "$GAMEDIR"/tes3mp-client-default.cfg.example "$TES3MP_HOME"/tes3mp-client.cfg
+    fi
 fi
-
-# Handle CoreScripts
-if [[ ! -d "$TES3MP_HOME"/server ]]; then
-    echo "Setting up CoreScripts in $TES3MP_HOME"
-    cp -r "$GAMEDIR"/server "$TES3MP_HOME"/
-    sed -i "s|home = .*|home = $TES3MP_HOME/server|g" "$TES3MP_HOME"/tes3mp-server.cfg
-fi
-
-# Run server
-cd "$GAMEDIR"
-LD_LIBRARY_PATH="./lib" ./bin/tes3mp-server "$@"
 EOF
 
-chmod +x tes3mp-server/tes3mp-server
+  # Create wrappers
+  echo -e "\n\nCreating wrappers"
+  for BINARY in "${PACKAGE_BINARIES[@]}"; do
+    if [ ! -f "$BINARY" ]; then
+      echo -e "Binary $BINARY not found"
+    else
+      WRAPPER="$BINARY"
+      BINARY_RENAME="$BINARY.x86_64"
+      mv "$BINARY" "$BINARY_RENAME"
+      printf "#!/bin/bash\n\nWRAPPER=\"\$(basename \$0)\"\nGAMEDIR=\"\$(dirname \$0)\"\ncd \"\$GAMEDIR\"\nif test -f ./tes3mp-prelaunch; then bash ./tes3mp-prelaunch \"\$WRAPPER\"; fi\nLD_LIBRARY_PATH=\"./lib\" ./$BINARY_RENAME \"\$@\"" > "$WRAPPER"
+    fi
+  done
+  chmod 755 *
 
-# Create archive
-echo "Creating final archive..."
-tar czf tes3mp-server.tar.gz tes3mp-server/
-
-echo "Server package created:"
-ls -lh tes3mp-server.tar.gz
+  echo "Job complete! Making archive . . ."
+  cd ..
+  tar -cvf tes3mp_linux.tar tes3mp-build
