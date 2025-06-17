@@ -72,10 +72,10 @@ for BIN in "${PACKAGE_BINARIES[@]}"; do
     cp -r ../$BIN .
 done
 
-git clone https://github.com/tes3mp-MP/CoreScripts.git server/
+git https://github.com/TES3MP/CoreScripts.git server/
 
 echo "Acquiring cjson . . ."
-curl  -o server/lib/cjson.dll -L https://github.com/tes3mp-MP/lua-cjson/releases/download/Stable-CI/cjson-MinSizeRel.dll
+curl  -o server/lib/cjson.dll -L https://github.com/DreamWeave-MP/lua-cjson/releases/download/Stable-CI/cjson-MinSizeRel.dll
 
 
 # Create pre-launch script
