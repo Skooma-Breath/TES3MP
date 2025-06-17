@@ -45,6 +45,7 @@ jobs:
             libqt5opengl5-dev \
             p7zip-full \
             wget \
+            liblz4-dev \
             && rm -rf /var/lib/apt/lists/*
 
         # Add this section: Build RecastNavigation from source
