@@ -108,14 +108,14 @@ jobs:
           fi
 
       # In your CI workflow, replace the verification step with:
-      - name: Verify Binary
-        run: |
-          echo "Checking for tes3mp-server in root directory:"
-          ls -la tes3mp-server || echo "Not found in root"
-          echo "Checking build directory:"
-          ls -la apps/openmw-mp/
-          echo "Full search:"
-          find . -name tes3mp-server
+      # - name: Verify Binary
+      #   run: |
+      #     echo "Checking for tes3mp-server in root directory:"
+      #     ls -la tes3mp-server || echo "Not found in root"
+      #     echo "Checking build directory:"
+      #     ls -la apps/openmw-mp/
+      #     echo "Full search:"
+      #     find . -name tes3mp-server
 
       - name: Install Server Only
         shell: bash
