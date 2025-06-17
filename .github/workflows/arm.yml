@@ -41,6 +41,7 @@ jobs:
             libopenal-dev \
             libbullet-dev \
             libmygui-dev \
+            librecastnavigation-dev \
             qtbase5-dev \
             libqt5opengl5-dev \
             p7zip-full \
