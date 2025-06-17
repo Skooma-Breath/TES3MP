@@ -78,6 +78,7 @@ jobs:
               -DOPENMW_USE_SYSTEM_BULLET=ON \
               -DOPENMW_USE_SYSTEM_MYGUI=ON \
               -DOPENMW_USE_SYSTEM_RECASTNAVIGATION=ON && \
+              -DDISABLE_FFMPEG=ON && \
             cmake --build . --target tes3mp-server -- -j$(nproc)
         EOF
         
