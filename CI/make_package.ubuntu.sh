@@ -137,4 +137,13 @@ EOF
 
   echo "Job complete! Making archive . . ."
   cd ..
-  tar -cvf tes3mp_linux.tar tes3mp-build
+  
+  # Create the archive using COMPRESSED tar format
+  echo "Creating compressed archive..."
+  tar czvf tes3mp-server.tar.gz -C tes3mp-build .
+
+  # Verify the archive
+  echo "Package contents:"
+  tar tzvf tes3mp-server.tar.gz | head -20
+  echo "Package created successfully!"
+  ls -lh tes3mp-server.tar.gz
