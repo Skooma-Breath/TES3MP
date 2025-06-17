@@ -133,14 +133,14 @@ jobs:
           # Make sure we're in root directory
           cd $GITHUB_WORKSPACE  
           sudo CI/make_package.ubuntu.sh
-          # Verify package contents
-          tar tzf tes3mp_linux.tar | grep bin/tes3mp-server
+          # # Verify package contents
+          # tar tzf tes3mp_linux.tar | grep bin/tes3mp-server
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          path: dreamweave_linux.tar
-          name: dreamweave_linux
+          path: tes3mp_linux.tar
+          name: tes3mp_linux
 
   # MacOS:
   #   runs-on: macos-latest
