@@ -56,7 +56,7 @@ jobs:
 
       - name: Configure
         run: |
-          rm -rf CMakeCache.txt CMakeFiles/ build/
+          rm -rf build CMakeCache.txt CMakeFiles/ 
           cmake -S . -B build \
             -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} \
             -DCMAKE_C_COMPILER_LAUNCHER=ccache \
@@ -82,6 +82,7 @@ jobs:
         # run: ./openmw_test_suite
 
       - name: Install
+        shell: bash
         run: cmake --install build
 
 
