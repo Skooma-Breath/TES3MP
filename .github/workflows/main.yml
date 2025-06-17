@@ -139,8 +139,8 @@ jobs:
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          path: tes3mp_linux.tar
-          name: tes3mp_linux
+          path: tes3mp-server.tar.gz
+          name: tes3mp-server-linux
 
   # MacOS:
   #   runs-on: macos-latest
