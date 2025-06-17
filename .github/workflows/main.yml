@@ -117,15 +117,21 @@ jobs:
       #     echo "Full search:"
       #     find . -name tes3mp-server
 
-      - name: Install Server Only
+      # - name: Install Server Only
+      #   shell: bash
+      #   run: |
+      #     mkdir -p install
+      #     cmake --install . --component tes3mp-server --prefix $PWD/install
+      #     ls -la .
+      #     ls -la ..
+      #     ls -la ..
+      #     ls -la ..
+
+      - name: Install
         shell: bash
         run: |
-          mkdir -p install
-          cmake --install . --component tes3mp-server --prefix $PWD/install
+          cmake --install .
           ls -la .
-          ls -la ..
-          ls -la ..
-          ls -la ..
 
       - name: Create Artifact
         shell: bash
