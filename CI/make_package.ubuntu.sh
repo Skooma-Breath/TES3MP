@@ -6,9 +6,11 @@ set -e
 
 # Check for binary in standard install locations
 BINARY_PATHS=(
-    "install/bin/tes3mp-server"
-    "bin/tes3mp-server" 
+   "install/bin/tes3mp-server"
+    "build/apps/openmw-mp/tes3mp-server"
     "apps/openmw-mp/tes3mp-server"
+    "bin/tes3mp-server"
+    "tes3mp-server"
 )
 
 for path in "${BINARY_PATHS[@]}"; do
