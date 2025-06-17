@@ -94,7 +94,7 @@ jobs:
       - name: Build and Debug
         run: |
           # Build with verbose output
-          cmake --build . --target tes3mp-server -- -j$(nproc) VERBOSE=1 2>&1 | tee full_build.log
+          cmake --build . --target all -- -j$(nproc) VERBOSE=1 2>&1 | tee full_build.log
     
           # Check for errors
           if grep -q "error:" full_build.log; then
