@@ -57,7 +57,7 @@ jobs:
       - name: Configure
         run: |
           rm -rf build CMakeCache.txt CMakeFiles/ 
-          cmake -S . -B build \
+          cmake . \
             -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} \
             -DCMAKE_C_COMPILER_LAUNCHER=ccache \
             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
@@ -72,11 +72,9 @@ jobs:
       - name: List Build Targets
         run: cmake --build build --target help
 
-      - name: Build
-        run: make -j$(nproc)
-
-      # - name: Build tes3mp-server
-      #   run: cmake --build build --target tes3mp-server -- -j$(nproc) VERBOSE=1 | tee full_build.log
+     
+      - name: Build tes3mp-server
+        run: cmake --build build --target tes3mp-server -- -j$(nproc) VERBOSE=1 | tee full_build.log
 
       # - name: Build All
       #   run: cmake --build build --target all tes3mp-server -- -j$(nproc) VERBOSE=1 | tee full_build.log
