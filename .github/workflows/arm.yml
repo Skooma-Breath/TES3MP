@@ -26,6 +26,13 @@ jobs:
         cat << 'EOF' > Dockerfile.arm64
         FROM arm64v8/ubuntu:22.04
 
+        # needed for ffmpeg if building the client???
+        #libavcodec-dev \
+        #libavformat-dev \
+        #libavutil-dev \
+        #libswscale-dev \
+        #libswresample-dev \
+
         # Install dependencies
         RUN apt-get update && apt-get install -y \
             build-essential \
