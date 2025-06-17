@@ -1,4 +1,4 @@
-name: ARM64 Cross-Compile Build
+name: ARM64 Build
 
 on:
   push:
@@ -11,92 +11,69 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+      with:
+        submodules: 'recursive'
+        
+    - name: Setup QEMU for ARM64
+      uses: docker/setup-qemu-action@v2
       
-    - name: Setup cross-compilation environment
+    - name: Build in ARM64 environment
       run: |
-        sudo apt-get update
-        sudo apt-get install -y \
-            gcc-aarch64-linux-gnu \
-            g++-aarch64-linux-gnu \
+        # Create ARM64 Dockerfile
+        cat << EOF > Dockerfile.arm64
+        FROM arm64v8/ubuntu:22.04
+        
+        # Install dependencies
+        RUN apt-get update && apt-get install -y \
+            build-essential \
             cmake \
             ninja-build \
             ccache \
-            qemu-user-static
+            git \
+            libluajit-5.1-dev \
+            liblua5.1-dev \
+            libboost-system-dev \
+            libboost-thread-dev \
+            libsdl2-dev \
+            libopenal-dev \
+            libbullet-dev \
+            libmygui-dev \
+            libraknet-dev \
+            qtbase5-dev \
+            libqt5opengl5-dev \
+            && rm -rf /var/lib/apt/lists/*
         
-        # Create sysroot directory
-        sudo mkdir -p /sysroot/usr
-        sudo chown -R $USER:$USER /sysroot
+        WORKDIR /build
+        COPY . .
         
-    - name: Create toolchain file
-      run: |
-        cat << EOF > toolchain.cmake
-        set(CMAKE_SYSTEM_NAME Linux)
-        set(CMAKE_SYSTEM_PROCESSOR aarch64)
-        
-        set(CMAKE_C_COMPILER aarch64-linux-gnu-gcc)
-        set(CMAKE_CXX_COMPILER aarch64-linux-gnu-g++)
-        
-        set(CMAKE_FIND_ROOT_PATH /sysroot)
-        set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
-        set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
-        set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
-        set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
-        
-        set(BOOST_ROOT /sysroot/usr)
-        set(ENV{PKG_CONFIG_PATH} /sysroot/usr/lib/aarch64-linux-gnu/pkgconfig)
-        set(ENV{PKG_CONFIG_LIBDIR} /sysroot/usr/lib/aarch64-linux-gnu/pkgconfig)
+        RUN mkdir build && cd build && \
+            cmake .. \
+              -DBUILD_OPENMW=OFF \
+              -DBUILD_OPENMW_MP=ON \
+              -DCMAKE_BUILD_TYPE=Release \
+              -DOPENMW_USE_SYSTEM_BULLET=ON \
+              -DOPENMW_USE_SYSTEM_MYGUI=ON \
+              -DOPENMW_USE_SYSTEM_RECASTNAVIGATION=ON && \
+            cmake --build . --target tes3mp-server -- -j\$(nproc)
         EOF
         
-    - name: Install ARM64 dependencies in sysroot
-      run: |
-        # Install ARM64 libraries into sysroot
-        sudo apt-get install -y \
-            libluajit-5.1-dev:arm64 \
-            liblua5.1-0-dev:arm64 \
-            libboost-system-dev:arm64 \
-            libboost-thread-dev:arm64 \
-            libsdl2-dev:arm64 \
-            libopenal-dev:arm64 \
-            libbullet-dev:arm64 \
-            libmygui-dev:arm64 \
-            --reinstall -o Dir::Cache="/var/cache/apt/archives" -o Dir::State::lists="lists.arm64"
+        # Build Docker image
+        docker buildx build --platform linux/arm64 -f Dockerfile.arm64 -t tes3mp-arm64 .
         
-        # Copy installed packages to sysroot
-        sudo cp -r /usr/aarch64-linux-gnu /sysroot/usr/
-        sudo cp -r /usr/include/aarch64-linux-gnu /sysroot/usr/include/
-        sudo cp -r /usr/lib/aarch64-linux-gnu /sysroot/usr/lib/
-        
-    - name: Build RakNet
-      run: |
-        cd extern/raknet
-        cmake -B build -G Ninja \
-            -DCMAKE_TOOLCHAIN_FILE=../../toolchain.cmake \
-            -DCMAKE_INSTALL_PREFIX=/sysroot/usr
-        cmake --build build
-        cmake --install build
-        cd ../..
-        
-    - name: Configure and build TES3MP Server
-      run: |
-        cmake -B build -G Ninja \
-            -DCMAKE_TOOLCHAIN_FILE=toolchain.cmake \
-            -DBUILD_OPENMW=OFF \
-            -DBUILD_OPENMW_MP=ON \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DOPENMW_USE_SYSTEM_BULLET=ON \
-            -DOPENMW_USE_SYSTEM_MYGUI=ON \
-            -DOPENMW_USE_SYSTEM_RECASTNAVIGATION=ON
-        
-        cmake --build build --target tes3mp-server
+        # Create container and copy binary
+        docker create --name tes3mp-container --platform linux/arm64 tes3mp-arm64
+        docker cp tes3mp-container:/build/build/apps/openmw-mp/tes3mp-server .
+        docker rm tes3mp-container
         
     - name: Verify ARM64 binary
       run: |
-        file build/apps/openmw-mp/tes3mp-server
+        file tes3mp-server
+        # Should show: ELF 64-bit LSB pie executable, ARM aarch64, version 1 (SYSV)...
         
-    - name: Package artifacts
+    - name: Package artifact
       run: |
-        mkdir -p package/bin
-        cp build/apps/openmw-mp/tes3mp-server package/bin/
+        mkdir -p package
+        mv tes3mp-server package/
         cp tes3mp-server-default.cfg package/
         tar czf tes3mp-server-arm64.tar.gz -C package .
         
