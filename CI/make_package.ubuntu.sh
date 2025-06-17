@@ -1,14 +1,9 @@
 #!/usr/bin/env bash
 set -e
 
-#!/usr/bin/env bash
-set -e
-
 # Check for binary in root directory first
 if [[ -f "tes3mp-server" ]]; then
     echo "Found tes3mp-server in root directory"
-    mkdir -p package/bin
-    mv -v tes3mp-server package/bin/
 else
     echo "ERROR: tes3mp-server not found in root directory!"
     echo "Current directory: $(pwd)"
