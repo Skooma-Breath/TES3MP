@@ -114,12 +114,6 @@ jobs:
         shell: bash
         run: cmake --install . --component tes3mp-server
 
-      - name: Verify installation
-        run: |
-          echo "Installed files:"
-          find install -type f
-          ls -la install/bin/
-        
       - name: Create Artifact
         shell: bash
         run: sudo CI/make_package.ubuntu.sh
