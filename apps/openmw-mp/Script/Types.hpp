@@ -53,7 +53,6 @@ template<> struct CharType<'l'> { typedef unsigned long long type; };
 template<> struct CharType<'f'> { typedef double type; };
 template<> struct CharType<'s'> { typedef const char* type; };
 template<> struct CharType<'v'> { typedef void type; };
-
 // attempt to fix compile error when building for arm
 template<> struct CharType<'a'> { typedef va_list type; };
 
