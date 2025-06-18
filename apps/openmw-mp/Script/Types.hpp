@@ -109,14 +109,14 @@ struct ScriptFunctionPointer : public ScriptIdentity
     void *addr;
 
     template<typename R, typename... Types>
-#if (!defined(__clang__) && defined(__GNUC__))
-    constexpr ScriptFunctionPointer(Function<R, Types...> addr) : ScriptIdentity(addr), addr(reinterpret_cast<void*>(reinterpret_cast<intptr_t>(addr))) {}
-#else
+// #if (!defined(__clang__) && defined(__GNUC__))
+    // constexpr ScriptFunctionPointer(Function<R, Types...> addr) : ScriptIdentity(addr), addr(reinterpret_cast<void*>(reinterpret_cast<intptr_t>(addr))) {}
+// #else
     // attempt to fix more compiler errors...
     constexpr ScriptFunctionPointer(Function<R, Types...> addr)
     : ScriptIdentity(addr),
       addr(reinterpret_cast<void*>(reinterpret_cast<intptr_t>(addr))) {}
-#endif
+// #endif
 };
 
 struct ScriptFunctionData
