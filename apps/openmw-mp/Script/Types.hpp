@@ -112,7 +112,10 @@ struct ScriptFunctionPointer : public ScriptIdentity
 #if (!defined(__clang__) && defined(__GNUC__))
     constexpr ScriptFunctionPointer(Function<R, Types...> addr) : ScriptIdentity(addr), addr(reinterpret_cast<void*>(reinterpret_cast<intptr_t>(addr))) {}
 #else
-    constexpr ScriptFunctionPointer(Function<R, Types...> addr) : ScriptIdentity(addr), addr(addr) {}
+    // attempt to fix more compiler errors...
+    constexpr ScriptFunctionPointer(Function<R, Types...> addr)
+    : ScriptIdentity(addr),
+      addr(reinterpret_cast<void*>(reinterpret_cast<intptr_t>(addr))) {}
 #endif
 };
 
