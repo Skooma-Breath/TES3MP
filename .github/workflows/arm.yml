@@ -24,7 +24,7 @@ jobs:
       run: |
         # Create Dockerfile
         cat << 'EOF' > Dockerfile.arm64
-        FROM arm64v8/ubuntu:22.04
+        FROM arm64v8/ubuntu:20.04
 
         # needed for ffmpeg if building the client???
         # libavcodec-dev \
@@ -39,41 +39,37 @@ jobs:
 
         # Install dependencies
         RUN apt-get update && apt-get install -y \
-            software-properties-common \
-            && add-apt-repository ppa:ubuntu-toolchain-r/test \
-            && apt-get update \
-            && apt-get install -y \
-                gcc-8 \
-                g++-8 \
-                build-essential \
-                cmake \
-                ninja-build \
-                ccache \
-                git \
-                libluajit-5.1-dev \
-                liblua5.1-dev \
-                libboost-system-dev \
-                libboost-thread-dev \
-                libboost-filesystem-dev \   
-                libboost-program-options-dev \  
-                libboost-iostreams-dev \   
-                libsdl2-dev \
-                libopenal-dev \
-                libbullet-dev \
-                libmygui-dev \
-                qtbase5-dev \
-                libqt5opengl5-dev \
-                p7zip-full \
-                wget \
-                liblz4-dev \
-                libavcodec-dev \
-                libavformat-dev \
-                libavutil-dev \
-                libswscale-dev \
-                libswresample-dev \
-                libunshield-dev \
-                libopenscenegraph-dev \  
-                libopenthreads-dev \    
+            build-essential \
+            gcc-8 \
+            g++-8 \
+            cmake \
+            ninja-build \
+            ccache \
+            git \
+            libluajit-5.1-dev \
+            liblua5.1-dev \
+            libboost-system-dev \
+            libboost-thread-dev \
+            libboost-filesystem-dev \   
+            libboost-program-options-dev \  
+            libboost-iostreams-dev \   
+            libsdl2-dev \
+            libopenal-dev \
+            libbullet-dev \
+            libmygui-dev \
+            qtbase5-dev \
+            libqt5opengl5-dev \
+            p7zip-full \
+            wget \
+            liblz4-dev \
+            libavcodec-dev \
+            libavformat-dev \
+            libavutil-dev \
+            libswscale-dev \
+            libswresample-dev \
+            libunshield-dev \
+            libopenscenegraph-dev \  
+            libopenthreads-dev \    
             && rm -rf /var/lib/apt/lists/*
 
         # Set GCC 8 as the default compiler
