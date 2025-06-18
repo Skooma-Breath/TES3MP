@@ -48,6 +48,9 @@ jobs:
             liblua5.1-dev \
             libboost-system-dev \
             libboost-thread-dev \
+            libboost-filesystem-dev \   
+            libboost-program-options-dev \  
+            libboost-iostreams-dev \   
             libsdl2-dev \
             libopenal-dev \
             libbullet-dev \
