@@ -104,8 +104,8 @@ jobs:
         WORKDIR /build
         COPY . .
 
-        # Fix the Types.hpp file to use standard va_list instead of GCC's __va_list
-        RUN sed -i 's/__va_list/va_list/g' apps/openmw-mp/Script/Types.hpp
+        # Fix va_list issues in all relevant files
+        RUN find . -type f \( -name "*.hpp" -o -name "*.cpp" \) -exec sed -i 's/__va_list/va_list/g' {} +
 
         RUN mkdir build && cd build && \
             cmake .. \
