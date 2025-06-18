@@ -103,6 +103,9 @@ jobs:
 
         RUN mkdir build && cd build && \
             cmake .. \
+              -DCMAKE_C_COMPILER=clang-14 \
+              -DCMAKE_CXX_COMPILER=clang++-14 \
+              -DCMAKE_CXX_FLAGS="-stdlib=libc++" \
               -DBUILD_OPENMW=OFF \
               -DBUILD_OPENMW_MP=ON \
               -DCMAKE_BUILD_TYPE=Release \
