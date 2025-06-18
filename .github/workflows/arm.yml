@@ -37,6 +37,10 @@ jobs:
         # libopenscenegraph-dev \
         # libopenthreads-dev \
 
+        # Set environment variables to avoid interactive prompts
+        ENV DEBIAN_FRONTEND=noninteractive
+        ENV TZ=UTC
+
         # Install dependencies
         RUN apt-get update && apt-get install -y \
             build-essential \
