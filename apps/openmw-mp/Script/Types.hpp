@@ -38,8 +38,6 @@ template<> struct TypeChar<char*, sizeof(char*)> { enum { value = 's' }; };
 template<> struct TypeChar<const char*, sizeof(const char*)> { enum { value = 's' }; };
 template<> struct TypeChar<void, sizeof_void<void>::value> { enum { value = 'v' }; };
 // attempt to fix compile error when building for arm
-// error: static assertion failed: Unsupported type in variadic type list
-// error: 'value' is not a member of 'TypeChar<__va_list, 32>'
 template<> struct TypeChar<va_list, sizeof(va_list)> { enum { value = 'a' }; };
 
 
@@ -57,8 +55,6 @@ template<> struct CharType<'s'> { typedef const char* type; };
 template<> struct CharType<'v'> { typedef void type; };
 
 // attempt to fix compile error when building for arm
-// error: static assertion failed: Unsupported type in variadic type list
-// error: 'value' is not a member of 'TypeChar<__va_list, 32>'
 template<> struct CharType<'a'> { typedef va_list type; };
 
 
