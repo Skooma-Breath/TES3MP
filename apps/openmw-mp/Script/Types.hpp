@@ -24,7 +24,7 @@ template<> struct sizeof_void<void> { enum { value = 0 }; };
 // attempt to fix compile error when building for arm
 // error: static assertion failed: Unsupported type in variadic type list
 // error: 'value' is not a member of 'TypeChar<__va_list, 32>'
-template<> struct TypeChar<__va_list, sizeof(__va_list)> { enum { value = 'a' }; };
+// template<> struct TypeChar<__va_list, sizeof(__va_list)> { enum { value = 'a' }; };
 
 
 template<typename T, size_t t> struct TypeChar { static_assert(!t, "Unsupported type in variadic type list"); };
@@ -57,7 +57,7 @@ template<> struct CharType<'v'> { typedef void type; };
 // attempt to fix compile error when building for arm
 // error: static assertion failed: Unsupported type in variadic type list
 // error: 'value' is not a member of 'TypeChar<__va_list, 32>'
-template<> struct CharType<'a'> { typedef __va_list type; };
+// template<> struct CharType<'a'> { typedef __va_list type; };
 
 
 template<typename... Types>
