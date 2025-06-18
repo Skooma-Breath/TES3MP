@@ -75,6 +75,10 @@ jobs:
             libc++abi-14-dev \  
             && rm -rf /var/lib/apt/lists/*
 
+        # Set Clang as the default compiler
+        RUN update-alternatives --install /usr/bin/cc cc /usr/bin/clang-14 100
+        RUN update-alternatives --install /usr/bin/c++ c++ /usr/bin/clang++-14 100
+
         # Add this section: Build RecastNavigation from source
         RUN mkdir -p /tmp/recastnavigation && cd /tmp/recastnavigation && \
             git clone --depth 1 --branch v1.6.0 https://github.com/recastnavigation/recastnavigation.git . && \
