@@ -39,47 +39,50 @@ jobs:
 
         # Install dependencies
         RUN apt-get update && apt-get install -y \
-            build-essential \
-            cmake \
-            ninja-build \
-            ccache \
-            git \
-            libluajit-5.1-dev \
-            liblua5.1-dev \
-            libboost-system-dev \
-            libboost-thread-dev \
-            libboost-filesystem-dev \   
-            libboost-program-options-dev \  
-            libboost-iostreams-dev \   
-            libsdl2-dev \
-            libopenal-dev \
-            libbullet-dev \
-            libmygui-dev \
-            qtbase5-dev \
-            libqt5opengl5-dev \
-            p7zip-full \
-            wget \
-            liblz4-dev \
-            libavcodec-dev \
-            libavformat-dev \
-            libavutil-dev \
-            libswscale-dev \
-            libswresample-dev \
-            libunshield-dev \
-            libopenscenegraph-dev \  
-            libopenthreads-dev \    
-            clang-14 \          
-            lldb-14 \           
-            lld-14 \            
-            libc++-14-dev \     
-            libc++abi-14-dev \  
+            software-properties-common \
+            && add-apt-repository ppa:ubuntu-toolchain-r/test \
+            && apt-get update \
+            && apt-get install -y \
+                gcc-8 \
+                g++-8 \
+                build-essential \
+                cmake \
+                ninja-build \
+                ccache \
+                git \
+                libluajit-5.1-dev \
+                liblua5.1-dev \
+                libboost-system-dev \
+                libboost-thread-dev \
+                libboost-filesystem-dev \   
+                libboost-program-options-dev \  
+                libboost-iostreams-dev \   
+                libsdl2-dev \
+                libopenal-dev \
+                libbullet-dev \
+                libmygui-dev \
+                qtbase5-dev \
+                libqt5opengl5-dev \
+                p7zip-full \
+                wget \
+                liblz4-dev \
+                libavcodec-dev \
+                libavformat-dev \
+                libavutil-dev \
+                libswscale-dev \
+                libswresample-dev \
+                libunshield-dev \
+                libopenscenegraph-dev \  
+                libopenthreads-dev \    
             && rm -rf /var/lib/apt/lists/*
 
-        # Set Clang as the default compiler
-        RUN update-alternatives --install /usr/bin/cc cc /usr/bin/clang-14 100
-        RUN update-alternatives --install /usr/bin/c++ c++ /usr/bin/clang++-14 100
+        # Set GCC 8 as the default compiler
+        RUN update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-8 100
+        RUN update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-8 100
+        RUN update-alternatives --install /usr/bin/cc cc /usr/bin/gcc-8 100
+        RUN update-alternatives --install /usr/bin/c++ c++ /usr/bin/g++-8 100
 
-        # Add this section: Build RecastNavigation from source
+        # Build RecastNavigation from source
         RUN mkdir -p /tmp/recastnavigation && cd /tmp/recastnavigation && \
             git clone --depth 1 --branch v1.6.0 https://github.com/recastnavigation/recastnavigation.git . && \
             mkdir build && cd build && \
@@ -103,9 +106,6 @@ jobs:
 
         RUN mkdir build && cd build && \
             cmake .. \
-              -DCMAKE_C_COMPILER=clang-14 \
-              -DCMAKE_CXX_COMPILER=clang++-14 \
-              -DCMAKE_CXX_FLAGS="-stdlib=libc++" \
               -DBUILD_OPENMW=OFF \
               -DBUILD_OPENMW_MP=ON \
               -DCMAKE_BUILD_TYPE=Release \
