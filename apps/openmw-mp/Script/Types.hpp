@@ -54,6 +54,12 @@ template<> struct CharType<'f'> { typedef double type; };
 template<> struct CharType<'s'> { typedef const char* type; };
 template<> struct CharType<'v'> { typedef void type; };
 
+// attempt to fix compile error when building for arm
+// error: static assertion failed: Unsupported type in variadic type list
+// error: 'value' is not a member of 'TypeChar<__va_list, 32>'
+template<> struct CharType<'a'> { typedef __va_list type; };
+
+
 template<typename... Types>
 struct TypeString {
     static constexpr char value[sizeof...(Types) + 1] = {
