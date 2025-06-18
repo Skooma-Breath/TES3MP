@@ -116,8 +116,8 @@ public:
     */
     static bool IsTimerElapsed(int timerId) noexcept;
 
-
-    static constexpr ScriptFunctionData functions[]{
+    //changed to const...
+    static const ScriptFunctionData functions[] {
             {"CreateTimer",         ScriptFunctions::CreateTimer},
             {"CreateTimerEx",       ScriptFunctions::CreateTimerEx},
             {"MakePublic",          ScriptFunctions::MakePublic},
