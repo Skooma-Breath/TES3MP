@@ -27,11 +27,15 @@ jobs:
         FROM arm64v8/ubuntu:22.04
 
         # needed for ffmpeg if building the client???
-        #libavcodec-dev \
-        #libavformat-dev \
-        #libavutil-dev \
-        #libswscale-dev \
-        #libswresample-dev \
+        # libavcodec-dev \
+        # libavformat-dev \
+        # libavutil-dev \
+        # libswscale-dev \
+        # libswresample-dev \
+
+        # osg
+        # libopenscenegraph-dev \
+        # libopenthreads-dev \
 
         # Install dependencies
         RUN apt-get update && apt-get install -y \
@@ -91,7 +95,13 @@ jobs:
               -DOPENMW_USE_SYSTEM_BULLET=ON \
               -DOPENMW_USE_SYSTEM_MYGUI=ON \
               -DOPENMW_USE_SYSTEM_RECASTNAVIGATION=ON \
-              -DDISABLE_FFMPEG=ON && \
+              -DDISABLE_FFMPEG=ON \
+              -DBUILD_OPENCS=OFF \              
+              -DBUILD_BROWSER=OFF \              
+              -DBUILD_LAUNCHER=OFF \             
+              -DBUILD_WIZARD=OFF \               
+              -DBUILD_NIFTEST=OFF \              
+              -DBUILD_ESMTOOL=OFF && \           
             cmake --build . --target tes3mp-server -- -j$(nproc)
         EOF
         
