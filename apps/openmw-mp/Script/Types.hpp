@@ -8,9 +8,6 @@
 #include <RakNetTypes.h>
 #include "Utils.hpp"
 
-#include <cstdarg>   // for va_list
-
-
 #ifdef _WIN32
 #include <winsock2.h>
 #endif
@@ -23,6 +20,7 @@ typedef void* lib_t;
 
 template<typename T> struct sizeof_void { enum { value = sizeof(T) }; };
 template<> struct sizeof_void<void> { enum { value = 0 }; };
+
 
 template<typename T, size_t t> struct TypeChar { static_assert(!t, "Unsupported type in variadic type list"); };
 template<> struct TypeChar<bool, sizeof(bool)> { enum { value = 'b' }; };
@@ -37,9 +35,6 @@ template<> struct TypeChar<double, sizeof(double)> { enum { value = 'f' }; };
 template<> struct TypeChar<char*, sizeof(char*)> { enum { value = 's' }; };
 template<> struct TypeChar<const char*, sizeof(const char*)> { enum { value = 's' }; };
 template<> struct TypeChar<void, sizeof_void<void>::value> { enum { value = 'v' }; };
-// attempt to fix compile error when building for arm
-template<> struct TypeChar<va_list, sizeof(va_list)> { enum { value = 'a' }; };
-
 
 template<const char t> struct CharType { static_assert(!t, "Unsupported type in variadic type list"); };
 template<> struct CharType<'b'> { typedef bool type; };
@@ -53,9 +48,6 @@ template<> struct CharType<'l'> { typedef unsigned long long type; };
 template<> struct CharType<'f'> { typedef double type; };
 template<> struct CharType<'s'> { typedef const char* type; };
 template<> struct CharType<'v'> { typedef void type; };
-// attempt to fix compile error when building for arm
-template<> struct CharType<'a'> { typedef va_list type; };
-
 
 template<typename... Types>
 struct TypeString {
@@ -107,16 +99,13 @@ struct CallbackIdentity
 struct ScriptFunctionPointer : public ScriptIdentity
 {
     void *addr;
-
+#if (!defined(__clang__) && defined(__GNUC__))
     template<typename R, typename... Types>
-// #if (!defined(__clang__) && defined(__GNUC__))
-    // constexpr ScriptFunctionPointer(Function<R, Types...> addr) : ScriptIdentity(addr), addr(reinterpret_cast<void*>(reinterpret_cast<intptr_t>(addr))) {}
-// #else
-    // attempt to fix more compiler errors...
-    constexpr ScriptFunctionPointer(Function<R, Types...> addr)
-    : ScriptIdentity(addr),
-      addr(reinterpret_cast<void*>(reinterpret_cast<intptr_t>(addr))) {}
-// #endif
+    constexpr ScriptFunctionPointer(Function<R, Types...> addr) : ScriptIdentity(addr), addr((void*)(addr)) {}
+#else
+    template<typename R, typename... Types>
+    constexpr ScriptFunctionPointer(Function<R, Types...> addr) : ScriptIdentity(addr), addr(addr) {}
+#endif
 };
 
 struct ScriptFunctionData
