@@ -66,6 +66,8 @@ jobs:
             libswscale-dev \
             libswresample-dev \
             libunshield-dev \
+            libopenscenegraph-dev \  
+            libopenthreads-dev \    
             && rm -rf /var/lib/apt/lists/*
 
         # Add this section: Build RecastNavigation from source
