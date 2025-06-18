@@ -53,6 +53,11 @@ jobs:
             p7zip-full \
             wget \
             liblz4-dev \
+            libavcodec-dev \
+            libavformat-dev \
+            libavutil-dev \
+            libswscale-dev \
+            libswresample-dev \
             && rm -rf /var/lib/apt/lists/*
 
         # Add this section: Build RecastNavigation from source
