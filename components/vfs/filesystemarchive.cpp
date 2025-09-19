@@ -4,6 +4,8 @@
 
 #include <components/debug/debuglog.hpp>
 
+#include <algorithm>
+
 namespace VFS
 {
 
@@ -35,7 +37,7 @@ namespace VFS
                 std::string proper = i->path ().string ();
 
                 FileSystemArchiveFile file(proper);
-
+                #include <algorithm> // Add this include at the top of the file
                 std::string searchable;
 
                 std::transform(proper.begin() + prefix, proper.end(), std::back_inserter(searchable), normalize_function);

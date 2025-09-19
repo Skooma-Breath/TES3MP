@@ -57,6 +57,17 @@ namespace MWMechanics
             + gmst.find("fBargainOfferBase")->mValue.getFloat()
             + int(pcTerm - npcTerm);
 
+        //temporary cap to success, when an item value would be haggled by more than 10% each way the offer is always refused
+        //this is to account for the current ability to exceed the buy/sell ratio and make infinite money, via haggling
+
+        float ratio = std::abs(float(playerOffer)) / std::abs(float(merchantOffer));
+        if (ratio < 0.9f || ratio > 1.1f)
+        {
+            x = 0.0f;
+        }
+
+        //end of haggle cap system
+
         int roll = Misc::Rng::rollDice(100) + 1;
 
         // reject if roll fails
@@ -65,18 +76,7 @@ namespace MWMechanics
             return false;
         }
 
-        // apply skill gain on successful barter
-        float skillGain = 0.f;
-        int finalPrice = std::abs(playerOffer);
-        int initialMerchantOffer = std::abs(merchantOffer);
 
-        if ( !buying && (finalPrice > initialMerchantOffer) ) {
-            skillGain = floor(100.f * (finalPrice - initialMerchantOffer) / finalPrice);
-        }
-        else if ( buying && (finalPrice < initialMerchantOffer) ) {
-            skillGain = floor(100.f * (initialMerchantOffer - finalPrice) / initialMerchantOffer);
-        }
-        player.getClass().skillUsageSucceeded(player, ESM::Skill::Mercantile, 0, skillGain);
 
         return true;
     }

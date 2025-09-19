@@ -34,6 +34,7 @@
 #include "esmstore.hpp"
 #include "class.hpp"
 
+
 void MWWorld::InventoryStore::copySlots (const InventoryStore& store)
 {
     // some const-trickery, required because of a flaw in the handling of MW-references and the
@@ -664,6 +665,72 @@ void MWWorld::InventoryStore::updateMagicEffects(const Ptr& actor)
                         params[i].mRandom = Misc::Rng::rollDice(delta + 1) / static_cast<float>(delta);
                     // Try resisting each effect
                     params[i].mMultiplier = MWMechanics::getEffectMultiplier(effect.mEffectID, actor, actor);
+
+                    // Start of dwemercoda resistance caps
+
+                    float magcap = 0.4f;
+
+                    //sub system to add 10% of willpower to magic resist
+                    MWWorld::Ptr player = MWMechanics::getPlayer();
+                    const MWMechanics::CreatureStats &playerStats = player.getClass().getCreatureStats(player);
+                    float playerWill = playerStats.getAttribute(ESM::Attribute::Willpower).getModified();
+                    float willMagicResist = 0.0f;
+
+                    if (playerWill > 50.0f)
+                    {
+                        playerWill -= 50.0f;
+                        willMagicResist = (playerWill / 500.0f);
+                    }
+
+                    // Check for drain effects
+                    if (effect.mEffectID == 17 || effect.mEffectID == 18 || effect.mEffectID == 19 || effect.mEffectID == 20 || effect.mEffectID == 21)
+                    {
+                        params[i].mMultiplier -= willMagicResist;
+                        params[i].mMultiplier = std::max(magcap, params[i].mMultiplier);
+                    }
+
+
+                    // Check for damage effects
+                    else if (effect.mEffectID == 22 || effect.mEffectID == 23 || effect.mEffectID == 24 || effect.mEffectID == 25 || effect.mEffectID == 26)
+                    {
+                        params[i].mMultiplier -= willMagicResist;
+                        params[i].mMultiplier = std::max(magcap, params[i].mMultiplier);
+                    }
+
+
+                    // Check for absorb effects
+                    else if (effect.mEffectID == 85 || effect.mEffectID == 86 || effect.mEffectID == 87 || effect.mEffectID == 88 || effect.mEffectID == 89)
+                    {
+                        params[i].mMultiplier -= willMagicResist;
+                        params[i].mMultiplier = std::max(magcap, params[i].mMultiplier);
+                    }
+
+
+                    // Check for weakness to elemental magicka poison effects
+                    else if (effect.mEffectID == 28 || effect.mEffectID == 29 || effect.mEffectID == 30 || effect.mEffectID == 31 || effect.mEffectID == 35)
+                    {
+                        params[i].mMultiplier -= willMagicResist;
+                        params[i].mMultiplier = std::max(magcap, params[i].mMultiplier);
+                    }
+
+
+                    // Check for other weakness effects normal weps common blight
+                    else if (effect.mEffectID == 32 || effect.mEffectID == 33 || effect.mEffectID == 36)
+                    {
+                        params[i].mMultiplier -= willMagicResist;
+                        params[i].mMultiplier = std::max(magcap, params[i].mMultiplier);
+                    }
+
+
+                    //check for negative illusion and alteration effects
+                    else if (effect.mEffectID == 7 || effect.mEffectID == 46 || effect.mEffectID == 47 || effect.mEffectID == 48)
+                    {
+                        params[i].mMultiplier -= willMagicResist;
+                        params[i].mMultiplier = std::max(magcap, params[i].mMultiplier);
+                    }
+
+                    // End of dwemercoda resistance caps
+
                     ++i;
                 }
 

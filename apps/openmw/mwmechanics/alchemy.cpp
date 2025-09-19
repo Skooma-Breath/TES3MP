@@ -49,7 +49,7 @@ std::set<MWMechanics::EffectKey> MWMechanics::Alchemy::listEffects() const
 {
     std::map<EffectKey, int> effects;
 
-    for (TIngredientsIterator iter (mIngredients.begin()); iter!=mIngredients.end(); ++iter)
+    for (TIngredientsIterator iter(mIngredients.begin()); iter != mIngredients.end(); ++iter)
     {
         if (!iter->isEmpty())
         {
@@ -57,11 +57,11 @@ std::set<MWMechanics::EffectKey> MWMechanics::Alchemy::listEffects() const
 
             std::set<EffectKey> seenEffects;
 
-            for (int i=0; i<4; ++i)
-                if (ingredient->mBase->mData.mEffectID[i]!=-1)
+            for (int i = 0; i < 4; ++i)
+                if (ingredient->mBase->mData.mEffectID[i] != -1)
                 {
-                    EffectKey key (
-                        ingredient->mBase->mData.mEffectID[i], ingredient->mBase->mData.mSkills[i]!=-1 ?
+                    EffectKey key(
+                        ingredient->mBase->mData.mEffectID[i], ingredient->mBase->mData.mSkills[i] != -1 ?
                         ingredient->mBase->mData.mSkills[i] : ingredient->mBase->mData.mAttributes[i]);
 
                     if (seenEffects.insert(key).second)
@@ -72,68 +72,61 @@ std::set<MWMechanics::EffectKey> MWMechanics::Alchemy::listEffects() const
 
     std::set<EffectKey> effects2;
 
-    for (std::map<EffectKey, int>::const_iterator iter (effects.begin()); iter!=effects.end(); ++iter)
-        if (iter->second>1)
-            effects2.insert (iter->first);
+    for (std::map<EffectKey, int>::const_iterator iter(effects.begin()); iter != effects.end(); ++iter)
+        if (iter->second > 1)
+            effects2.insert(iter->first);
 
     return effects2;
 }
 
-void MWMechanics::Alchemy::applyTools (int flags, float& value) const
+void MWMechanics::Alchemy::applyTools(int flags, float& value) const
 {
-    bool magnitude = !(flags & ESM::MagicEffect::NoMagnitude);
-    bool duration = !(flags & ESM::MagicEffect::NoDuration);
+    //bool magnitude = !(flags & ESM::MagicEffect::NoMagnitude);
+    //bool duration = !(flags & ESM::MagicEffect::NoDuration);
     bool negative = (flags & ESM::MagicEffect::Harmful) != 0;
 
-    int tool = negative ? ESM::Apparatus::Alembic : ESM::Apparatus::Retort;
-
-    int setup = 0;
-
-    if (!mTools[tool].isEmpty() && !mTools[ESM::Apparatus::Calcinator].isEmpty())
-        setup = 1;
-    else if (!mTools[tool].isEmpty())
-        setup = 2;
-    else if (!mTools[ESM::Apparatus::Calcinator].isEmpty())
-        setup = 3;
-    else
-        return;
-
-    float toolQuality = setup==1 || setup==2 ? mTools[tool].get<ESM::Apparatus>()->mBase->mData.mQuality : 0;
-    float calcinatorQuality = setup==1 || setup==3 ?
-        mTools[ESM::Apparatus::Calcinator].get<ESM::Apparatus>()->mBase->mData.mQuality : 0;
-
-    float quality = 1;
-
-    switch (setup)
+    if (!mTools[ESM::Apparatus::Calcinator].isEmpty())
     {
-        case 1:
-
-            quality = negative ? 2 * toolQuality + 3 * calcinatorQuality :
-                (magnitude && duration ?
-                2 * toolQuality + calcinatorQuality : 2/3.0f * (toolQuality + calcinatorQuality) + 0.5f);
-            break;
-
-        case 2:
-
-            quality = negative ? 1+toolQuality : (magnitude && duration ? toolQuality : toolQuality + 0.5f);
-            break;
-
-        case 3:
-
-            quality = magnitude && duration ? calcinatorQuality : calcinatorQuality + 0.5f;
-            break;
+        float calcinatorQuality = mTools[ESM::Apparatus::Calcinator].get<ESM::Apparatus>()->mBase->mData.mQuality;
+        if (negative == true)
+        {
+            calcinatorQuality /= (10.0f / 3.0f);
+            calcinatorQuality += 1.0f;
+            value *= calcinatorQuality;
+        }
+        else
+        {
+            calcinatorQuality /= 10.0f;
+            calcinatorQuality += 1.0f;
+            value *= calcinatorQuality;
+        }
     }
 
-    if (setup==3 || !negative)
+    if (!mTools[ESM::Apparatus::Alembic].isEmpty())
     {
-        value += quality;
+        if (negative == true)
+        {
+            float alembicQuality = mTools[ESM::Apparatus::Alembic].get<ESM::Apparatus>()->mBase->mData.mQuality;
+            float alembicMod = (0.4f * alembicQuality);
+            alembicMod = (1.0f - alembicMod);
+            alembicMod = std::max(0.1f, alembicMod);
+            value *= alembicMod;
+        }
     }
-    else
-    {
-        if (quality==0)
-            throw std::runtime_error ("invalid derived alchemy apparatus quality");
 
-        value /= quality;
+    if (!mTools[ESM::Apparatus::Retort].isEmpty())
+    {
+        if (negative == true)
+        {
+            value = value;
+        }
+        else
+        {
+            float retortQuality = mTools[ESM::Apparatus::Retort].get<ESM::Apparatus>()->mBase->mData.mQuality;
+            retortQuality /= 10.0f;
+            retortQuality += 1.0f;
+            value *= retortQuality;
+        }
     }
 }
 
@@ -145,18 +138,122 @@ void MWMechanics::Alchemy::updateEffects()
     if (countIngredients()<2 || mAlchemist.isEmpty() || mTools[ESM::Apparatus::MortarPestle].isEmpty())
         return;
 
+    //dwemer coda, ingredient value logic
+    int numberIngredients = countIngredients();
+
+    std::vector<int> ingredientValues;
+
+
+    for (TIngredientsIterator it = beginIngredients(); it != endIngredients(); ++it)
+    {
+        if (it->isEmpty()) continue;
+
+        auto *wrap = it->get<ESM::Ingredient>();
+        if (!wrap) continue;
+
+        auto *base = wrap->mBase;
+        if (!base) continue;
+
+        int value = base->mData.mValue;
+
+        ingredientValues.push_back(value);
+    }
+    // iterate over ingredients, guarding, get ID, add their value to the vector
+
+    int sumIngredientValue = 0;
+    for (int v : ingredientValues) sumIngredientValue += v;
+    // add them all up into sumIngredientValue as an int
+
+    //dwemer coda end
+
     // find effects
     std::set<EffectKey> effects (listEffects());
 
     // general alchemy factor
     float x = getAlchemyFactor();
 
-    x *= mTools[ESM::Apparatus::MortarPestle].get<ESM::Apparatus>()->mBase->mData.mQuality;
+    float averageIngredientValue = 0.0f;
+    float priceMod = 0.0f;
+    float multMod = 1.0f;
+    
+    //average the ingredient values with guarding against 0s
+    //then work out benefit from tiers and apply, dwemer coda
+    if ((sumIngredientValue > 0) && (numberIngredients > 0))
+    {
+        averageIngredientValue = (sumIngredientValue / numberIngredients);
+
+        if (averageIngredientValue < 5.0f)
+        {
+            multMod = 0.7f;
+        }
+        else if ((averageIngredientValue >= 5.0f) && (averageIngredientValue < 200.0f))
+        {
+            // y = 64.46238 + (-293895.7 - 64.46238)/(1 + (x/3.767532e-32)^0.116272)
+            // where y is skill boost, and x is ingredient value
+
+            float yf = 64.5f + (-293960.0f / (1.0f + std::powf(averageIngredientValue / 3.76e-32f, 0.11627f)));
+            priceMod += yf;
+        }
+        else if (averageIngredientValue >= 200.0f)
+        {
+            priceMod = 30.0f;
+            float highValueHolder = (averageIngredientValue - 200.0f);
+            highValueHolder /= 10.0f;
+            priceMod += highValueHolder;
+        }
+
+        if (averageIngredientValue >= 100.0f)
+        {
+            multMod = 1.1f;
+        }
+    }
+
+    if (sumIngredientValue == 0.0f)
+    {
+        multMod = 0.7f;
+    }
+
+    x += priceMod;
+    x *= multMod;
+
+    // begin step down mortar effectiveness, dwemer coda
+    float mortarQuality = mTools[ESM::Apparatus::MortarPestle].get<ESM::Apparatus>()->mBase->mData.mQuality;
+
+    float mortarModifier = 1.0f;
+    float qHolder = 1.0f;
+
+    if (mortarQuality < 1.0f)
+    {
+        qHolder = (1.0f - mortarQuality);
+        qHolder /= 2.0f;
+        qHolder = (1.0f - qHolder);
+        mortarModifier = qHolder;
+    }
+
+    if (mortarQuality > 1.0f)
+    {
+        qHolder = (mortarQuality - 1.0f);
+        qHolder /= 2.0f;
+        qHolder += 1.0f;
+        mortarModifier = qHolder;
+    }
+
+    x *= mortarModifier;
+
+    // end step down mortar effectiveness, dwemer coda
+
     x *= MWBase::Environment::get().getWorld()->getStore().get<ESM::GameSetting>().find ("fPotionStrengthMult")->mValue.getFloat();
 
-    // value
+
+    // potion value, with dwemer coda cap added
     mValue = static_cast<int> (
         x * MWBase::Environment::get().getWorld()->getStore().get<ESM::GameSetting>().find ("iAlchemyMod")->mValue.getFloat());
+    mValue = std::min(mValue, sumIngredientValue);
+
+    // dwemer coda convert alchemyfactor to magicka budget
+
+    float potionMagickaBudget = (x / 6.0f);
+
 
     // build quantified effect list
     for (std::set<EffectKey>::const_iterator iter (effects.begin()); iter!=effects.end(); ++iter)
@@ -182,16 +279,40 @@ void MWMechanics::Alchemy::updateEffects()
         if (fPotionT1DurMult<=0)
             throw std::runtime_error ("invalid gmst: fPotionT1DurMult");
 
+        // dwemer coda budget to effect converter start
+
+        float vHolderOne = (potionMagickaBudget / magicEffect->mData.mBaseCost);
+        vHolderOne *= 40.0f;
+        float durHolder = sqrtf(vHolderOne);
+        float magHolder = (durHolder / 2.0f);
+
+        //override duration to budget over two, if the effect has no magnitude
+        if (magicEffect->mData.mFlags & ESM::MagicEffect::NoMagnitude)
+        {
+            durHolder = (vHolderOne / 2.0f);
+        }
+
+        //override magnitude to budget over two, if the effect has no duration
+        if (magicEffect->mData.mFlags & ESM::MagicEffect::NoDuration)
+        {
+            magHolder = (vHolderOne / 4.0f);
+        }
+
+        // dwemer coda budget to effect converter end
+
         float magnitude = (magicEffect->mData.mFlags & ESM::MagicEffect::NoMagnitude) ?
-            1.0f : (x / fPotionT1MagMul) / magicEffect->mData.mBaseCost;
+            1.0f : magHolder;
         float duration = (magicEffect->mData.mFlags & ESM::MagicEffect::NoDuration) ?
-            1.0f : (x / fPotionT1DurMult) / magicEffect->mData.mBaseCost;
+            1.0f : durHolder;
 
         if (!(magicEffect->mData.mFlags & ESM::MagicEffect::NoMagnitude))
             applyTools (magicEffect->mData.mFlags, magnitude);
 
         if (!(magicEffect->mData.mFlags & ESM::MagicEffect::NoDuration))
             applyTools (magicEffect->mData.mFlags, duration);
+
+        duration *= fPotionT1DurMult;
+        magnitude *= fPotionT1MagMul;
 
         duration = roundf(duration);
         magnitude = roundf(magnitude);
@@ -304,9 +425,19 @@ void MWMechanics::Alchemy::addPotion (const std::string& name)
     for (TIngredientsIterator iter (beginIngredients()); iter!=endIngredients(); ++iter)
         if (!iter->isEmpty())
             newRecord.mData.mWeight += iter->get<ESM::Ingredient>()->mBase->mData.mWeight;
-
+    // new dwemcod weight logic begin
     if (countIngredients() > 0)
+    {
         newRecord.mData.mWeight /= countIngredients();
+        float weightHolder = newRecord.mData.mWeight;
+        weightHolder = std::min(weightHolder, 1.0f);
+        float weightReduction = getAlchemyFactor();
+        weightReduction /= 100.0f;
+        weightHolder -= weightReduction;
+        weightHolder = std::max(weightHolder, 0.1f);
+        newRecord.mData.mWeight = weightHolder;
+    }
+    // new weight logic end  
 
     newRecord.mData.mValue = mValue;
     newRecord.mData.mAutoCalc = 0;
@@ -347,6 +478,7 @@ void MWMechanics::Alchemy::addPotion (const std::string& name)
 
 void MWMechanics::Alchemy::increaseSkill()
 {
+    //dwemcod, now unused
     mAlchemist.getClass().skillUsageSucceeded (mAlchemist, ESM::Skill::Alchemy, 0);
 }
 
@@ -602,6 +734,32 @@ MWMechanics::Alchemy::Result MWMechanics::Alchemy::create (const std::string& na
 
 MWMechanics::Alchemy::Result MWMechanics::Alchemy::createSingle ()
 {
+
+    //dwemer coda, sum ingredient values
+    int numberIngredients = countIngredients();
+    int sumIngredientValue = 0;
+    for (TIngredientsIterator it = beginIngredients(); it != endIngredients(); ++it)
+    {
+        if (it->isEmpty()) continue;
+
+        auto *wrap = it->get<ESM::Ingredient>();
+        if (!wrap) continue;
+
+        auto *base = wrap->mBase;
+        if (!base) continue;
+
+        sumIngredientValue += base->mData.mValue;
+    }
+
+    float averageIngredientValue = 0.0f;
+
+    if ((sumIngredientValue > 0) && (numberIngredients > 0))
+    {
+        averageIngredientValue = static_cast<float>(sumIngredientValue) / static_cast<float>(numberIngredients);
+    }
+
+    //dwemer coda sum value end
+
     if (beginEffects() == endEffects())
     {
         // all effects were nullified due to insufficient skill
@@ -609,7 +767,23 @@ MWMechanics::Alchemy::Result MWMechanics::Alchemy::createSingle ()
         return Result_RandomFailure;
     }
 
-    if (getAlchemyFactor() < Misc::Rng::roll0to99())
+    //dwemcod, increase base success chance
+    float successChance = 30.0f;
+    successChance += ( getAlchemyFactor() / 1.5f);
+
+    //dwemcod, ingredients add to success chance
+    float itemSuccessAddition = 0.0f;
+
+    if (averageIngredientValue >= 10.0f)
+    {
+        itemSuccessAddition = (0.158f * averageIngredientValue);
+        itemSuccessAddition += 8.42f;
+    }
+
+    successChance += itemSuccessAddition;
+
+
+    if (successChance < Misc::Rng::roll0to99())
     {
         removeIngredients();
         return Result_RandomFailure;
@@ -619,7 +793,38 @@ MWMechanics::Alchemy::Result MWMechanics::Alchemy::createSingle ()
 
     removeIngredients();
 
-    increaseSkill();
+    //added the content of increaseskill here so it has access to the above variables, and commented out the call
+
+
+    float alchemySkill = mAlchemist.getClass().getSkill(mAlchemist, ESM::Skill::Alchemy);
+
+    float alchXpMod = 1.0f;
+
+    //reduction in XP from potions with avg ingredient values less than 5gp
+    //to reduce the 1gp ingredient spamming
+    //even this might be too generous
+    if (averageIngredientValue < 5.0f)
+    {
+        alchXpMod = 0.5f;
+
+        if (alchemySkill > 30.0f)
+        {
+            alchXpMod = 0.25f;
+        }
+
+        if (alchemySkill > 60.0f)
+        {
+            alchXpMod = 0.125f;
+        }
+
+        if (alchemySkill > 90.0f)
+        {
+            alchXpMod = 0.05f;
+        }
+    }
+
+    mAlchemist.getClass().skillUsageSucceeded(mAlchemist, ESM::Skill::Alchemy, 0, alchXpMod);
+    //increaseSkill();
 
     return Result_Success;
 }

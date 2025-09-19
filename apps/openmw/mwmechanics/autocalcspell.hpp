@@ -24,9 +24,9 @@ std::vector<std::string> autoCalcPlayerSpells(const int* actorSkills, const int*
 
 bool attrSkillCheck (const ESM::Spell* spell, const int* actorSkills, const int* actorAttributes);
 
-void calcWeakestSchool(const ESM::Spell* spell, const int* actorSkills, int& effectiveSchool, float& skillTerm);
+void calcWeakestSchool(const ESM::Spell* spell, const int* actorSkills, int& effectiveSchool, float& skillTerm, bool useNpcCost = false);
 
-float calcAutoCastChance(const ESM::Spell* spell, const int* actorSkills, const int* actorAttributes, int effectiveSchool);
+float calcAutoCastChance(const ESM::Spell* spell, const int* actorSkills, const int* actorAttributes, int effectiveSchool, bool useNpcCost = false);
 
 }
 

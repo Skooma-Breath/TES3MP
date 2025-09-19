@@ -30,26 +30,40 @@ namespace MWMechanics
 
     bool Pickpocket::getDetected(float valueTerm)
     {
-        float x = getChanceModifier(mThief);
-        float y = getChanceModifier(mVictim, valueTerm);
+        //dwemcod, complete function overhaul to mirror pickpocketing UI window
+        float playerTerm = getChanceModifier(mThief);
 
-        float t = 2*x - y;
+        float itemValue = valueTerm;
 
-        float pcSneak = static_cast<float>(mThief.getClass().getSkill(mThief, ESM::Skill::Sneak));
+        itemValue = std::max(itemValue, 1.0f);
+
+        float itemDifficulty = (itemValue / 5.0f);
+
+        float difficultyMod = (playerTerm - itemDifficulty);
+
+        difficultyMod *= 1.50f;
+
+        int successChance = 50;
+
+        successChance += static_cast<int>(difficultyMod);
+
         int iPickMinChance = MWBase::Environment::get().getWorld()->getStore().get<ESM::GameSetting>()
-                .find("iPickMinChance")->mValue.getInteger();
+            .find("iPickMinChance")->mValue.getInteger();
         int iPickMaxChance = MWBase::Environment::get().getWorld()->getStore().get<ESM::GameSetting>()
-                .find("iPickMaxChance")->mValue.getInteger();
+            .find("iPickMaxChance")->mValue.getInteger();
 
         int roll = Misc::Rng::roll0to99();
-        if (t < pcSneak / iPickMinChance)
+
+        successChance = std::min(int(iPickMaxChance), successChance);
+        successChance = std::max(int(iPickMinChance), successChance);
+
+        if (successChance > roll)
         {
-            return (roll > int(pcSneak / iPickMinChance));
+            return false;
         }
         else
         {
-            t = std::min(float(iPickMaxChance), t);
-            return (roll > int(t));
+            return true;
         }
     }
 
@@ -58,14 +72,16 @@ namespace MWMechanics
         float stackValue = static_cast<float>(item.getClass().getValue(item) * count);
         float fPickPocketMod = MWBase::Environment::get().getWorld()->getStore().get<ESM::GameSetting>()
                 .find("fPickPocketMod")->mValue.getFloat();
-        float valueTerm = 10 * fPickPocketMod * stackValue;
+        float valueTerm = fPickPocketMod * stackValue;
+        //dwemcod, changed GMST behaviour by removing 10x mult, now value is difficulty if GMST is 1
 
         return getDetected(valueTerm);
     }
 
     bool Pickpocket::finish()
     {
-        return getDetected(0.f);
+        //dwemcod, now the player will never be caught just from closing the window
+        return false;
     }
 
 }

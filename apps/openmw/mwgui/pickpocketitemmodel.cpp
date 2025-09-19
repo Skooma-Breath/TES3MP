@@ -21,7 +21,23 @@ namespace MWGui
     {
         MWWorld::Ptr player = MWMechanics::getPlayer();
         mSourceModel = sourceModel;
-        float chance = player.getClass().getSkill(player, ESM::Skill::Sneak);
+        //float chance = player.getClass().getSkill(player, ESM::Skill::Sneak);
+
+        //updated chance logic to better mirror pickpocket success chance logic
+        //note however that this does not include the fatigue term, an intentional choice
+        //so by balancing around a 50% chance to steal, I am actually setting a baseline chance of 62.5% if the player is full fatigue
+        const MWMechanics::CreatureStats &playerStats = player.getClass().getCreatureStats(player);
+        float luck = playerStats.getAttribute(ESM::Attribute::Luck).getModified();
+        float agility = playerStats.getAttribute(ESM::Attribute::Agility).getModified();
+        float sneak = player.getClass().getSkill(player, ESM::Skill::Sneak);
+        float chance = (sneak + (agility * 0.2) + (luck * 0.1));
+
+
+        // gold per skill level logic, will mirror what the steal chances are
+
+        chance *= 5.0f;
+
+        //
 
         mSourceModel->update();
 
@@ -30,8 +46,22 @@ namespace MWGui
         {
             for (size_t i = 0; i<mSourceModel->getItemCount(); ++i)
             {
-                if (Misc::Rng::roll0to99() > chance)
+                const ItemStack& item = mSourceModel->getItem(i);
+                MWWorld::Ptr itemPtr = item.mBase;
+                if (itemPtr.isEmpty())
+                    continue; // don't know if I strictly needed to do this, but it's a robust guarding, I think technically
+                              // some NPCs can carry light sources as psuedo items
+
+                int singleValue = itemPtr.getClass().getValue(itemPtr);
+                int count = item.mCount;
+                float stackValue = static_cast<float>(singleValue) * static_cast<float>(count);
+
+                //float chanceMod = (chance * 10.0f);
+
+                if (stackValue > chance)
+                {
                     mHiddenItems.push_back(mSourceModel->getItem(i));
+                }
             }
         }
     }
@@ -67,9 +97,23 @@ namespace MWGui
             if (item.mFlags & ItemStack::Flag_Bound)
                 continue;
 
-            if (std::find(mHiddenItems.begin(), mHiddenItems.end(), item) == mHiddenItems.end()
-                    && item.mType != ItemStack::Type_Equipped)
+            // dwemcod, slight restructure of logic, an attempt at some backend guarding
+
+            bool itemHidden = false;
+            for (const ItemStack &h : mHiddenItems)
+            {
+                if (h.mBase.isEmpty()) continue;
+                if (item.mBase.isEmpty()) { itemHidden = false; break; }
+                if (h.mBase == item.mBase) { itemHidden = true; break; }
+            }
+            if (!itemHidden && item.mType != ItemStack::Type_Equipped && !(item.mFlags & ItemStack::Flag_Bound))
                 mItems.push_back(item);
+
+
+            //original logic
+            //if (std::find(mHiddenItems.begin(), mHiddenItems.end(), item) == mHiddenItems.end()
+            //        && item.mType != ItemStack::Type_Equipped)
+            //   mItems.push_back(item);
         }
     }
 

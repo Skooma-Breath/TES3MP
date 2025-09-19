@@ -156,7 +156,9 @@ void MWMechanics::NpcStats::setFactionReputation (const std::string& faction, in
 
 float MWMechanics::NpcStats::getSkillProgressRequirement (int skillIndex, const ESM::Class& class_) const
 {
-    float progressRequirement = static_cast<float>(1 + getSkill(skillIndex).getBase());
+    /// dwemer coda xp change floor begin
+    float progressRequirement = std::max(30.0f, static_cast<float>(1 + getSkill(skillIndex).getBase()));
+    /// dwemer coda xp change floor end
 
     const MWWorld::Store<ESM::GameSetting> &gmst =
         MWBase::Environment::get().getWorld()->getStore().get<ESM::GameSetting>();
@@ -203,6 +205,7 @@ void MWMechanics::NpcStats::useSkill (int skillIndex, const ESM::Class& class_, 
     const ESM::Skill *skill =
         MWBase::Environment::get().getWorld()->getStore().get<ESM::Skill>().find (skillIndex);
     float skillGain = 1;
+    float base = getSkill(skillIndex).getBase();
     if (usageType>=4)
         throw std::runtime_error ("skill usage type out of range");
     if (usageType>=0)
@@ -212,6 +215,35 @@ void MWMechanics::NpcStats::useSkill (int skillIndex, const ESM::Class& class_, 
             throw std::runtime_error ("invalid skill gain factor");
     }
     skillGain *= extraFactor;
+
+    float xpreductionmultiplier = 1.0f;
+
+    if (base >= 50)
+    {
+        xpreductionmultiplier = 0.8f;
+    }
+
+    if (base >= 60)
+    {
+        xpreductionmultiplier = 0.65f;
+    }
+
+    if (base >= 70)
+    {
+        xpreductionmultiplier = 0.55f;
+    }
+
+    if (base >= 80)
+    {
+        xpreductionmultiplier = 0.4f;
+    }
+
+    if (base >= 90)
+    {
+        xpreductionmultiplier = 0.33f;
+    }
+
+    skillGain *= xpreductionmultiplier;
 
     MWMechanics::SkillValue& value = getSkill (skillIndex);
 
@@ -230,6 +262,12 @@ void MWMechanics::NpcStats::increaseSkill(int skillIndex, const ESM::Class &clas
 
     if (base >= 100.f)
         return;
+
+    if (readBook)
+    {
+        if (base >= 95.f)
+            return;
+    }
 
     base += 1;
 

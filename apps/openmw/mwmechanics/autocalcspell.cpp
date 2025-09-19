@@ -79,7 +79,7 @@ namespace MWMechanics
 
             int school;
             float skillTerm;
-            calcWeakestSchool(&spell, actorSkills, school, skillTerm);
+            calcWeakestSchool(&spell, actorSkills, school, skillTerm, true);
             assert(school >= 0 && school < 6);
             SchoolCaps& cap = schoolCaps[school];
 
@@ -87,7 +87,7 @@ namespace MWMechanics
                 continue;
 
             static const float fAutoSpellChance = gmst.find("fAutoSpellChance")->mValue.getFloat();
-            if (calcAutoCastChance(&spell, actorSkills, actorAttributes, school) < fAutoSpellChance)
+            if (calcAutoCastChance(&spell, actorSkills, actorAttributes, school, true) < fAutoSpellChance)
                 continue;
 
             selectedSpells.push_back(spell.mId);
@@ -233,13 +233,28 @@ namespace MWMechanics
         return true;
     }
 
-    void calcWeakestSchool (const ESM::Spell* spell, const int* actorSkills, int& effectiveSchool, float& skillTerm)
+    void calcWeakestSchool (const ESM::Spell* spell, const int* actorSkills, int& effectiveSchool, float& skillTerm, bool useNpcCost)
     {
         // Morrowind for some reason uses a formula slightly different from magicka cost calculation
         float minChance = std::numeric_limits<float>::max();
+        
         for (const ESM::ENAMstruct& effect : spell->mEffects.mList)
         {
             const ESM::MagicEffect* magicEffect = MWBase::Environment::get().getWorld()->getStore().get<ESM::MagicEffect>().find(effect.mEffectID);
+
+            float effectCost = 1.0f;
+
+            if (useNpcCost == false)
+            {
+                // Player behaviour, use live ESP mBaseCost values
+                effectCost = magicEffect->mData.mBaseCost;
+            }
+            else
+            {
+                // NPC fork, use hardcoded base game values as per this function
+                effectCost = getBaseGameEffectCost(effect.mEffectID);
+            }
+
 
             int minMagn = 1;
             int maxMagn = 1;
@@ -259,9 +274,9 @@ namespace MWMechanics
                 .get<ESM::GameSetting>().find("fEffectCostMult")->mValue.getFloat();
 
             float x = 0.5 * (std::max(1, minMagn) + std::max(1, maxMagn));
-            x *= 0.1 * magicEffect->mData.mBaseCost;
+            x *= 0.1 * effectCost;
             x *= 1 + duration;
-            x += 0.05 * std::max(1, effect.mArea) * magicEffect->mData.mBaseCost;
+            x += 0.05 * std::max(1, effect.mArea) * effectCost;
             x *= fEffectCostMult;
 
             if (effect.mRange == ESM::RT_Target)
@@ -277,7 +292,7 @@ namespace MWMechanics
         }
     }
 
-    float calcAutoCastChance(const ESM::Spell *spell, const int *actorSkills, const int *actorAttributes, int effectiveSchool)
+    float calcAutoCastChance(const ESM::Spell *spell, const int *actorSkills, const int *actorAttributes, int effectiveSchool, bool useNpcCost)
     {
         if (spell->mData.mType != ESM::Spell::ST_Spell)
             return 100.f;
@@ -289,7 +304,7 @@ namespace MWMechanics
         if (effectiveSchool != -1)
             skillTerm = 2.f * actorSkills[spellSchoolToSkill(effectiveSchool)];
         else
-            calcWeakestSchool(spell, actorSkills, effectiveSchool, skillTerm); // Note effectiveSchool is unused after this
+            calcWeakestSchool(spell, actorSkills, effectiveSchool, skillTerm, useNpcCost); // Note effectiveSchool is unused after this
 
         float castChance = skillTerm - spell->mData.mCost + 0.2f * actorAttributes[ESM::Attribute::Willpower] + 0.1f * actorAttributes[ESM::Attribute::Luck];
         return castChance;

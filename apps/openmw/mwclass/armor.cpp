@@ -37,6 +37,11 @@
 
 #include "../mwgui/tooltips.hpp"
 
+
+/// dwemer coda additions
+
+
+
 namespace MWClass
 {
 
@@ -321,6 +326,8 @@ namespace MWClass
     {
         const MWWorld::LiveCellRef<ESM::Armor> *ref = ptr.get<ESM::Armor>();
 
+        MWWorld::Ptr player = MWMechanics::getPlayer();
+
         int armorSkillType = getEquipmentSkill(ptr);
         float armorSkill = actor.getClass().getSkill(actor, armorSkillType);
 
@@ -329,6 +336,12 @@ namespace MWClass
 
         if(ref->mBase->mData.mWeight == 0)
             return ref->mBase->mData.mArmor;
+
+        if (actor == player && armorSkill < 30.0f)
+            {
+                return (ref->mBase->mData.mArmor * (armorSkill + 5) / (static_cast<float>(iBaseArmorSkill) + 5));
+            }
+
         else
             return ref->mBase->mData.mArmor * armorSkill / static_cast<float>(iBaseArmorSkill);
     }

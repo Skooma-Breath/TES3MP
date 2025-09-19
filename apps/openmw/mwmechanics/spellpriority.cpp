@@ -604,7 +604,7 @@ namespace MWMechanics
             }
         }
 
-        rating *= calcEffectCost(effect, magicEffect);
+        rating *= calcEffectCost(effect, magicEffect, true);
 
         // Currently treating all "on target" or "on touch" effects to target the enemy actor.
         // Combat AI is egoistic, so doesn't consider applying positive effects to friendly actors.

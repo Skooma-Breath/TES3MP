@@ -30,6 +30,10 @@
 #include "../mwworld/containerstore.hpp"
 #include "../mwworld/esmstore.hpp"
 
+
+#include "../mwworld/inventorystore.hpp"
+
+
 namespace MWGui
 {
 MerchantRepair::MerchantRepair()
@@ -71,13 +75,16 @@ void MerchantRepair::setPtr(const MWWorld::Ptr &actor)
                     .find("fRepairMult")->mValue.getFloat();
 
             float p = static_cast<float>(std::max(1, basePrice));
-            float r = static_cast<float>(std::max(1, static_cast<int>(maxDurability / p)));
+            float r = static_cast<float>(maxDurability / p);
 
             int x = static_cast<int>((maxDurability - durability) / r);
-            x = static_cast<int>(fRepairMult * x);
+            x = static_cast<int>(fRepairMult * x * 0.5f);
             x = std::max(1, x);
 
+
             int price = MWBase::Environment::get().getMechanicsManager()->getBarterOffer(mActor, x, true);
+
+
 
             std::string name = iter->getClass().getName(*iter)
                     + " - " + MyGUI::utility::toString(price)

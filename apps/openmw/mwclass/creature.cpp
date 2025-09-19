@@ -563,6 +563,13 @@ namespace MWClass
             }
             else
             {
+                if (!attacker.isEmpty())
+                {
+                    if (damage > 0)
+                    {
+                        damage = scaleHandDamage(damage, attacker, ptr);
+                    }
+                }
                 MWMechanics::DynamicStat<float> fatigue(stats.getFatigue());
                 fatigue.setCurrent(fatigue.getCurrent() - damage, true);
                 stats.setFatigue(fatigue);
@@ -760,7 +767,24 @@ namespace MWClass
     float Creature::getArmorRating (const MWWorld::Ptr& ptr) const
     {
         // Equipment armor rating is deliberately ignored.
-        return getCreatureStats(ptr).getMagicEffects().get(ESM::MagicEffect::Shield).getMagnitude();
+
+        float creaturearmour = 0.0f;
+        creaturearmour += 10.0f;
+        creaturearmour += getCreatureStats(ptr).getMagicEffects().get(ESM::MagicEffect::Shield).getMagnitude();
+
+        int creaturelevel = getCreatureStats(ptr).getLevel();
+
+        if (creaturelevel >= 5)
+        {
+            creaturearmour += 2.0f;
+        }
+
+        if (creaturelevel >= 10)
+        {
+            creaturearmour += 3.0f;
+        }
+
+        return creaturearmour;
     }
 
     float Creature::getCapacity (const MWWorld::Ptr& ptr) const

@@ -111,8 +111,61 @@ namespace MWGui
 
         for (int i=0; i<3; ++i)
         {
-            int price = static_cast<int>(pcStats.getSkill (skills[i].first).getBase() * gmst.find("iTrainingMod")->mValue.getInteger());
+            //dwemercoda non linear pricing position two
+
+            int price = static_cast<int>(pcStats.getSkill(skills[i].first).getBase());
+
+            int baseskillforprice = static_cast<int>(pcStats.getSkill(skills[i].first).getBase());
+
+            int priceaddition = 10;
+
+            if (baseskillforprice > 20)
+            {
+                int baseover20 = (baseskillforprice - 20);
+                priceaddition += baseover20;
+            }
+
+            if (baseskillforprice > 30)
+            {
+                int baseover30 = (baseskillforprice - 30);
+                baseover30 *= 3;
+                priceaddition += baseover30;
+            }
+
+            if (baseskillforprice > 50)
+            {
+                int baseover50 = (baseskillforprice - 50);
+                baseover50 *= 10;
+                priceaddition += baseover50;
+            }
+
+            if (baseskillforprice > 70)
+            {
+                int baseover70 = (baseskillforprice - 70);
+                baseover70 *= 5;
+                priceaddition += baseover70;
+            }
+
+            if (baseskillforprice > 80)
+            {
+                int baseover80 = (baseskillforprice - 80);
+                baseover80 *= 5;
+                priceaddition += baseover80;
+            }
+
+            if (baseskillforprice > 90)
+            {
+                int baseover90 = (baseskillforprice - 80);
+                baseover90 *= 35;
+                priceaddition += baseover90;
+            }
+
+            price += priceaddition;
+
+            price *= gmst.find("iTrainingMod")->mValue.getInteger();
+
             price = std::max(1, price);
+
             price = MWBase::Environment::get().getMechanicsManager()->getBarterOffer(mPtr, price, true);
 
             MyGUI::Button* button = mTrainingOptions->createWidget<MyGUI::Button>(price <= playerGold ? "SandTextButton" : "SandTextButtonDisabled", // can't use setEnabled since that removes tooltip
@@ -151,7 +204,62 @@ namespace MWGui
         const MWWorld::ESMStore &store =
             MWBase::Environment::get().getWorld()->getStore();
 
-        int price = pcStats.getSkill (skillId).getBase() * store.get<ESM::GameSetting>().find("iTrainingMod")->mValue.getInteger();
+        //dwemercoda non linear pricing position one
+
+        int price = pcStats.getSkill(skillId).getBase();
+
+        int baseskillforprice = pcStats.getSkill(skillId).getBase();
+
+        int priceaddition = 10;
+
+        if (baseskillforprice > 20)
+        {
+            int baseover20 = (baseskillforprice - 20);
+            priceaddition += baseover20;
+        }
+
+        if (baseskillforprice > 30)
+        {
+            int baseover30 = (baseskillforprice - 30);
+            baseover30 *= 3;
+            priceaddition += baseover30;
+        }
+
+        if (baseskillforprice > 50)
+        {
+            int baseover50 = (baseskillforprice - 50);
+            baseover50 *= 10;
+            priceaddition += baseover50;
+        }
+
+        if (baseskillforprice > 70)
+        {
+            int baseover70 = (baseskillforprice - 70);
+            baseover70 *= 5;
+            priceaddition += baseover70;
+        }
+
+        if (baseskillforprice > 80)
+        {
+            int baseover80 = (baseskillforprice - 80);
+            baseover80 *= 5;
+            priceaddition += baseover80;
+        }
+
+        if (baseskillforprice > 90)
+        {
+            int baseover90 = (baseskillforprice - 80);
+            baseover90 *= 35;
+            priceaddition += baseover90;
+        }
+
+        price += priceaddition;
+
+        
+        price *= store.get<ESM::GameSetting>().find("iTrainingMod")->mValue.getInteger();
+     
+
+
         price = MWBase::Environment::get().getMechanicsManager()->getBarterOffer(mPtr,price,true);
 
         if (price > player.getClass().getContainerStore(player).count(MWWorld::ContainerStore::sGoldId))

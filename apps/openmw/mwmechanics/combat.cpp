@@ -38,6 +38,12 @@
 #include "actorutil.hpp"
 #include "pathfinding.hpp"
 
+/// added by dwemer coda
+
+#include "weapontype.hpp"
+
+/// added by dwemer coda
+
 namespace
 {
 
@@ -158,10 +164,31 @@ namespace MWMechanics
 
             // Reduce shield durability by incoming damage
             int shieldhealth = shield->getClass().getItemHealth(*shield);
-            shieldhealth -= std::min(shieldhealth, int(damage));
+
+            int damagetoshieldmodded = damage;
+
+            MWWorld::Ptr player = getPlayer();
+
+            if (blocker == getPlayer())
+            {
+                float armorerSkill = player.getClass().getSkill(player, ESM::Skill::Armorer);
+                armorerSkill = std::min(100.0f, armorerSkill);
+                armorerSkill = std::max(1.0f, armorerSkill);
+
+                float armorerx = 1.0f - (armorerSkill * 0.0075f);
+
+                damagetoshieldmodded *= armourdamagetaken();
+
+                damagetoshieldmodded = static_cast<int>(damagetoshieldmodded * armorerx);
+                damagetoshieldmodded = std::max(1, damagetoshieldmodded);
+            }
+
+            shieldhealth -= std::min(shieldhealth, int(damagetoshieldmodded));
             shield->getCellRef().setCharge(shieldhealth);
             if (shieldhealth == 0)
                 inv.unequipItem(*shield, blocker);
+
+
             // Reduce blocker fatigue
             const float fFatigueBlockBase = gmst.find("fFatigueBlockBase")->mValue.getFloat();
             const float fFatigueBlockMult = gmst.find("fFatigueBlockMult")->mValue.getFloat();
@@ -281,7 +308,17 @@ namespace MWMechanics
                 End of tes3mp addition
             */
 
-            if (Misc::Rng::roll0to99() >= getHitChance(attacker, victim, skillValue))
+            /// start of dwemer coda ranged attack accuracy changes
+
+            float hitchanceholder = 0.f;
+            hitchanceholder = getHitChance(attacker, victim, skillValue);
+
+            if (attacker == getPlayer())
+            {
+                hitchanceholder += 20;
+            }
+
+            if (Misc::Rng::roll0to99() >= hitchanceholder)
             {
                 /*
                     Start of tes3mp addition
@@ -298,6 +335,8 @@ namespace MWMechanics
                 MWMechanics::reduceWeaponCondition(damage, false, weapon, attacker);
                 return;
             }
+
+            /// end of dwemer coda ranged attack accuracy changes
 
             const unsigned char* attack = weapon.get<ESM::Weapon>()->mBase->mData.mChop;
             damage = attack[0] + ((attack[1] - attack[0]) * attackStrength); // Bow/crossbow damage
@@ -346,13 +385,59 @@ namespace MWMechanics
 
         if (validVictim)
         {
+
+            /// start of dwemer coda arrow recovery changes
+
+            int getmarksman = attacker.getClass().getSkill(attacker, weapon.getClass().getEquipmentSkill(weapon));
+            
             // Non-enchanted arrows shot at enemies have a chance to turn up in their inventory
+            // dwemcod makes it so that enchanted arrows can too
+
             if (victim != getPlayer() && !appliedEnchantment)
             {
                 float fProjectileThrownStoreChance = gmst.find("fProjectileThrownStoreChance")->mValue.getFloat();
+
+                if (attacker == getPlayer())
+                {
+                    float skillprojectilemod = 0.f;
+                    float getmarksmanfloat = getmarksman;
+                    skillprojectilemod = std::max(1.0f, getmarksmanfloat / 25.0f);
+                    fProjectileThrownStoreChance *= skillprojectilemod;
+                }
+
                 if (Misc::Rng::rollProbability() < fProjectileThrownStoreChance / 100.f)
                     victim.getClass().getContainerStore(victim).add(projectile, 1, victim);
             }
+
+            if (victim != getPlayer() && appliedEnchantment)
+            {
+                float fProjectileThrownStoreChance = gmst.find("fProjectileThrownStoreChance")->mValue.getFloat();
+
+                if (attacker == getPlayer())
+                {
+                    float skillprojectilemod = 0.f;
+                    float getmarksmanfloat = getmarksman;
+                    if (getmarksmanfloat > 99)
+                    {
+                        getmarksmanfloat = 100;
+                    }
+                    if (getmarksmanfloat < 51)
+                    {
+                        fProjectileThrownStoreChance = 0.f;
+                    }
+                    else
+                    {
+                        getmarksmanfloat -= 50;
+                        skillprojectilemod = std::max(0.05f, getmarksmanfloat / 25.0f);
+                    }
+                    fProjectileThrownStoreChance *= skillprojectilemod;
+                }
+
+                if (Misc::Rng::rollProbability() < fProjectileThrownStoreChance / 100.f)
+                    victim.getClass().getContainerStore(victim).add(projectile, 1, victim);
+            }
+
+            /// end of dwemer coda arrow recovery changes
 
             victim.getClass().onHit(victim, damage, true, projectile, attacker, hitPosition, true);
         }
@@ -400,12 +485,32 @@ namespace MWMechanics
                                     gmst.find("fCombatInvisoMult")->mValue.getFloat() *
                                     victimStats.getMagicEffects().get(ESM::MagicEffect::Invisibility).getMagnitude());
         }
-        float attackTerm = skillValue +
-                          (stats.getAttribute(ESM::Attribute::Agility).getModified() / 5.0f) +
-                          (stats.getAttribute(ESM::Attribute::Luck).getModified() / 10.0f);
-        attackTerm *= stats.getFatigueTerm();
-        attackTerm += mageffects.get(ESM::MagicEffect::FortifyAttack).getMagnitude() -
-                     mageffects.get(ESM::MagicEffect::Blind).getMagnitude();
+
+        /// start of dwemer coda hitchance changes
+
+        float attackTerm = 0.0f;
+
+        if (attacker == getPlayer())
+        {
+            attackTerm += (skillValue * 0.7) +
+                (stats.getAttribute(ESM::Attribute::Agility).getModified() / 5.0f) +
+                (stats.getAttribute(ESM::Attribute::Luck).getModified() / 10.0f);
+            attackTerm *= stats.getFatigueTerm();
+            attackTerm += mageffects.get(ESM::MagicEffect::FortifyAttack).getMagnitude() -
+                mageffects.get(ESM::MagicEffect::Blind).getMagnitude();
+            attackTerm += 20;
+        }
+        else {
+            attackTerm += skillValue +
+                (stats.getAttribute(ESM::Attribute::Agility).getModified() / 5.0f) +
+                (stats.getAttribute(ESM::Attribute::Luck).getModified() / 10.0f);
+            attackTerm *= stats.getFatigueTerm();
+            attackTerm += mageffects.get(ESM::MagicEffect::FortifyAttack).getMagnitude() -
+                mageffects.get(ESM::MagicEffect::Blind).getMagnitude();
+        }
+
+
+        /// end of dwemer coda hitchance changes
 
         return round(attackTerm - defenseTerm);
     }
@@ -450,8 +555,19 @@ namespace MWMechanics
             static const float fElementalShieldMult = MWBase::Environment::get().getWorld()->getStore().get<ESM::GameSetting>().find("fElementalShieldMult")->mValue.getFloat();
             x = fElementalShieldMult * magnitude * (1.f - 0.01f * x);
 
-            // Note swapped victim and attacker, since the attacker takes the damage here.
-            x = scaleDamage(x, victim, attacker);
+            MWWorld::Ptr player = MWMechanics::getPlayer();
+
+            if (attacker == player)
+            {
+                x *= magicdamagetaken();
+            }
+
+            if (attacker != player)
+            {
+                x *= castenchantedDamagescale();
+            }
+
+
 
             MWMechanics::DynamicStat<float> health = attackerStats.getHealth();
             health.setCurrent(health.getCurrent() - x);
@@ -482,6 +598,24 @@ namespace MWMechanics
                 const float fWeaponDamageMult = MWBase::Environment::get().getWorld()->getStore().get<ESM::GameSetting>().find("fWeaponDamageMult")->mValue.getFloat();
                 float x = std::max(1.f, fWeaponDamageMult * damage);
 
+                MWWorld::Ptr player = MWMechanics::getPlayer();
+                if (attacker == player)
+                {
+                    /// get and clamp armorer skill
+                    float armorerSkill = player.getClass().getSkill(player, ESM::Skill::Armorer);
+                    armorerSkill = std::min(100.0f, armorerSkill);
+                    armorerSkill = std::max(1.0f, armorerSkill);
+
+                    float armorerx = 1.0f - (armorerSkill * 0.0075f);
+
+                    x *= weapondamagetaken();
+
+                    x = (armorerx * x);
+
+                    x = std::max(1.0f, x);
+
+                }
+
                 weaphealth -= std::min(int(x), weaphealth);
                 weapon.getCellRef().setCharge(weaphealth);
             }
@@ -507,16 +641,167 @@ namespace MWMechanics
                 .find("fDamageStrengthBase")->mValue.getFloat();
         static const float fDamageStrengthMult = MWBase::Environment::get().getWorld()->getStore().get<ESM::GameSetting>()
                 .find("fDamageStrengthMult")->mValue.getFloat();
-        damage *= fDamageStrengthBase +
+
+        /// start of dwemer coda damage changes
+
+        if (attacker == getPlayer())
+        {
+            int weaponType;
+            MWWorld::ContainerStoreIterator activeWeaponIt = MWMechanics::getActiveWeapon(attacker, &weaponType);
+            float releventskill = 0.f;
+            float releventattribute = 0.f;
+            float exceeds50by = 0.f;
+
+            float baseDamageSnapshot;
+            baseDamageSnapshot = damage;
+
+            damage *= fDamageStrengthBase +
                 (attacker.getClass().getCreatureStats(attacker).getAttribute(ESM::Attribute::Strength).getModified() * fDamageStrengthMult * 0.1f);
+
+            if (weaponType)
+            {
+                const ESM::WeaponType* weapInfo = MWMechanics::getWeaponType(weaponType);
+                if (weapInfo)
+                {
+                    if (weaponType == ESM::Weapon::SpearTwoWide)
+                    {
+                        releventskill = static_cast<float>(attacker.getClass().getSkill(attacker, ESM::Skill::Spear));
+
+                        ///now we are modifying the damage based on weapon skill, revert the damage value back to what it was before the core game equation modified it
+                        damage = baseDamageSnapshot;
+
+                        ///and now actually apply the desired formula using weapon skill
+                        damage *= fDamageStrengthBase +
+                            (((attacker.getClass().getCreatureStats(attacker).getAttribute(ESM::Attribute::Strength).getModified() + releventskill) / 2) * fDamageStrengthMult * 0.1f);
+                    }
+
+                    if (weaponType == ESM::Weapon::LongBladeTwoHand || weaponType == ESM::Weapon::LongBladeOneHand)
+                    {
+                        releventskill = static_cast<float>(attacker.getClass().getSkill(attacker, ESM::Skill::LongBlade));
+
+                        ///now we are modifying the damage based on weapon skill, revert the damage value back to what it was before the core game equation modified it
+                        damage = baseDamageSnapshot;
+
+                        ///and now actually apply the desired formula using weapon skill
+                        damage *= fDamageStrengthBase +
+                            (((attacker.getClass().getCreatureStats(attacker).getAttribute(ESM::Attribute::Strength).getModified() + releventskill) / 2) * fDamageStrengthMult * 0.1f);
+                    
+                        ///add the agility bonus for long blades
+                        
+                        releventattribute = attacker.getClass().getCreatureStats(attacker).getAttribute(ESM::Attribute::Agility).getModified();
+
+                        if (releventattribute > 50)
+                        {
+                            exceeds50by = (releventattribute - 50);
+                            damage *= (1 + (exceeds50by / 200));
+                        }
+
+                    }
+
+                    if (weaponType == ESM::Weapon::ShortBladeOneHand)
+                    {
+                        releventskill = static_cast<float>(attacker.getClass().getSkill(attacker, ESM::Skill::ShortBlade));
+
+                        ///now we are modifying the damage based on weapon skill, revert the damage value back to what it was before the core game equation modified it
+                        damage = baseDamageSnapshot;
+
+                        ///and now actually apply the desired formula using weapon skill
+                        damage *= fDamageStrengthBase +
+                            (((attacker.getClass().getCreatureStats(attacker).getAttribute(ESM::Attribute::Strength).getModified() + releventskill) / 2) * fDamageStrengthMult * 0.1f);
+                    }
+
+                    if (weaponType == ESM::Weapon::BluntOneHand || weaponType == ESM::Weapon::BluntTwoClose || weaponType == ESM::Weapon::BluntTwoWide)
+                    {
+                        releventskill = static_cast<float>(attacker.getClass().getSkill(attacker, ESM::Skill::BluntWeapon));
+
+                        ///now we are modifying the damage based on weapon skill, revert the damage value back to what it was before the core game equation modified it
+                        damage = baseDamageSnapshot;
+
+                        ///and now actually apply the desired formula using weapon skill
+                        damage *= fDamageStrengthBase +
+                            (((attacker.getClass().getCreatureStats(attacker).getAttribute(ESM::Attribute::Strength).getModified() + releventskill) / 2) * fDamageStrengthMult * 0.1f);
+
+                        ///add the strength bonus for blunt
+
+                        releventattribute = attacker.getClass().getCreatureStats(attacker).getAttribute(ESM::Attribute::Strength).getModified();
+
+                        if (releventattribute > 50)
+                        {
+                            exceeds50by = (releventattribute - 50);
+                            damage *= (1 + (exceeds50by / 200));
+                        }
+                    
+                    }
+
+                    if (weaponType == ESM::Weapon::AxeOneHand || weaponType == ESM::Weapon::AxeTwoHand)
+                    {
+                        releventskill = static_cast<float>(attacker.getClass().getSkill(attacker, ESM::Skill::Axe));
+
+                        ///now we are modifying the damage based on weapon skill, revert the damage value back to what it was before the core game equation modified it
+                        damage = baseDamageSnapshot;
+
+                        ///and now actually apply the desired formula using weapon skill
+                        damage *= fDamageStrengthBase +
+                            (((attacker.getClass().getCreatureStats(attacker).getAttribute(ESM::Attribute::Strength).getModified() + releventskill) / 2) * fDamageStrengthMult * 0.1f);
+                    
+                        ///add the endurance bonus for axe
+
+                        releventattribute = attacker.getClass().getCreatureStats(attacker).getAttribute(ESM::Attribute::Endurance).getModified();
+
+                        if (releventattribute > 50)
+                        {
+                            exceeds50by = (releventattribute - 50);
+                            damage *= (1 + (exceeds50by / 200));
+                        }
+                    
+                    }
+
+                    if (weaponType == ESM::Weapon::MarksmanBow || weaponType == ESM::Weapon::MarksmanCrossbow)
+                    {
+                        releventskill = static_cast<float>(attacker.getClass().getSkill(attacker, ESM::Skill::Marksman));
+
+                        ///now we are modifying the damage based on weapon skill, revert the damage value back to what it was before the core game equation modified it
+                        damage = baseDamageSnapshot;
+
+                        ///and now actually apply the desired formula using weapon skill
+                        damage *= fDamageStrengthBase +
+                            (((attacker.getClass().getCreatureStats(attacker).getAttribute(ESM::Attribute::Agility).getModified() + releventskill) / 2) * fDamageStrengthMult * 0.1f);
+
+                    }
+
+                    if (weaponType == ESM::Weapon::MarksmanThrown)
+                    {
+                        releventskill = static_cast<float>(attacker.getClass().getSkill(attacker, ESM::Skill::Marksman));
+
+                        ///now we are modifying the damage based on weapon skill, revert the damage value back to what it was before the core game equation modified it
+                        damage = baseDamageSnapshot;
+
+                        ///and now actually apply the desired formula using weapon skill
+                        damage *= fDamageStrengthBase +
+                            (((attacker.getClass().getCreatureStats(attacker).getAttribute(ESM::Attribute::Strength).getModified() + releventskill) / 1.3) * fDamageStrengthMult * 0.1f);
+                    }
+
+                }
+            }
+        }
+        else
+        {
+            damage *= fDamageStrengthBase +
+                (attacker.getClass().getCreatureStats(attacker).getAttribute(ESM::Attribute::Strength).getModified() * fDamageStrengthMult * 0.1f);
+        }
+
+        /// end of dwemer coda damage changes
+
     }
 
     void getHandToHandDamage(const MWWorld::Ptr &attacker, const MWWorld::Ptr &victim, float &damage, bool &healthdmg, float attackStrength)
     {
+        //dwemcod hand to hand min damage change
         const MWWorld::ESMStore& store = MWBase::Environment::get().getWorld()->getStore();
         float minstrike = store.get<ESM::GameSetting>().find("fMinHandToHandMult")->mValue.getFloat();
         float maxstrike = store.get<ESM::GameSetting>().find("fMaxHandToHandMult")->mValue.getFloat();
-        damage  = static_cast<float>(attacker.getClass().getSkill(attacker, ESM::Skill::HandToHand));
+        damage  = (0.9f * (static_cast<float>(attacker.getClass().getSkill(attacker, ESM::Skill::HandToHand))));
+        damage += 10.0f;
         damage *= minstrike + ((maxstrike-minstrike)*attackStrength);
 
         MWMechanics::CreatureStats& otherstats = victim.getClass().getCreatureStats(victim);
@@ -529,8 +814,35 @@ namespace MWMechanics
         // 1 = Factor into werewolf hand-to-hand combat.
         // 2 = Ignore werewolves.
         int factorStrength = Settings::Manager::getInt("strength influences hand to hand", "Game");
-        if (factorStrength == 1 || (factorStrength == 2 && !isWerewolf)) {
-            damage *= attacker.getClass().getCreatureStats(attacker).getAttribute(ESM::Attribute::Strength).getModified() / 40.0f;
+        if (factorStrength == 1 || (factorStrength == 2 && !isWerewolf))
+        {
+            //dwemcod, change str scaling to behave like weapon scaling does in core
+            float attackerStrength = attacker.getClass().getCreatureStats(attacker).getAttribute(ESM::Attribute::Strength).getModified();
+            float strengthMult = 1.0f;
+            float strengthHolder = 50.0f;
+            //redundant guarding?
+            attackerStrength = std::max(1.0f, attackerStrength);
+
+            //this doesn't need to be two if statements, the logic is identical, collapse it down when I tidy the code
+
+            if (attackerStrength > 50.0f)
+            {
+                strengthHolder = (attackerStrength - 50.0f);
+                strengthHolder /= 100.0f;
+                strengthMult += strengthHolder;
+            }
+
+            if (attackerStrength < 50.0f)
+            {
+                strengthHolder = (attackerStrength - 50.0f);
+                strengthHolder /= 100.0f;
+                strengthMult += strengthHolder;
+            }
+
+            damage *= strengthMult;
+
+            //original openMW strength based scaling
+            //damage *= attacker.getClass().getCreatureStats(attacker).getAttribute(ESM::Attribute::Strength).getModified() / 40.0f;
         }
 
         if(isWerewolf)
