@@ -2,6 +2,7 @@
 #define UTILS_HPP
 
 #include <algorithm>
+#include <cstdint>
 #include <string>
 #include <sstream>
 #include <vector>

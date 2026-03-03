@@ -1,6 +1,7 @@
 #ifndef MISC_UTF8ITER_HPP
 #define MISC_UTF8ITER_HPP
 
+#include <cstdint>
 #include <cstring>
 #include <tuple>
 

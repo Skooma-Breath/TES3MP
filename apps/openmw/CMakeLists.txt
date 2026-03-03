@@ -149,7 +149,6 @@ add_openmw_dir (mwmp/processors/worldstate ProcessorCellReset ProcessorClientScr
     )
 
 # Main executable
-
 if (NOT ANDROID)
     openmw_add_executable(tes3mp
         ${OPENMW_FILES}
@@ -163,6 +162,7 @@ else ()
         ${GAME} ${GAME_HEADER}
     )
 endif ()
+
 
 # Sound stuff - here so CMake doesn't stupidly recompile EVERYTHING
 # when we change the backend.
