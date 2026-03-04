@@ -3023,12 +3023,18 @@ namespace MWWorld
     {
         const Scene::CellStoreCollection& activeCells = mWorldScene->getActiveCells();
 
-        for (auto it = activeCells.begin(); it != activeCells.end(); ++it)
+        // Use post-increment: capture `current` before unloadCell erases it from the set,
+        // which would invalidate `it` and cause undefined behavior on ++it.
+        auto it = activeCells.begin();
+        while (it != activeCells.end())
         {
+            auto current = it++;
             // Ignore a placeholder interior that a player may currently be in
-            if ((*it)->getCell()->isExterior() || !Misc::StringUtils::ciEqual((*it)->getCell()->getDescription(), RecordHelper::getPlaceholderInteriorCellName()))
+            if ((*current)->getCell()->isExterior() ||
+                !Misc::StringUtils::ciEqual((*current)->getCell()->getDescription(),
+                    RecordHelper::getPlaceholderInteriorCellName()))
             {
-                mWorldScene->unloadCell(it);
+                mWorldScene->unloadCell(current);
             }
         }
     }

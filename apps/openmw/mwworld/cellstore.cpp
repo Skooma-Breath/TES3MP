@@ -11,6 +11,7 @@
 #include "../mwmp/Main.hpp"
 #include "../mwmp/Networking.hpp"
 #include "../mwmp/CellController.hpp"
+#include "../mwmp/PlayerList.hpp"
 /*
     End of tes3mp addition
 */
@@ -305,22 +306,25 @@ namespace MWWorld
         updateMergedRefs();
     }
 
-    MWWorld::Ptr CellStore::moveTo(const Ptr &object, CellStore *cellToMoveTo)
+    MWWorld::Ptr CellStore::moveTo(const Ptr& object, CellStore* cellToMoveTo)
     {
         if (cellToMoveTo == this)
             throw std::runtime_error("moveTo: object is already in this cell");
 
-        // We assume that *this is in State_Loaded since we could hardly have reference to a live object otherwise.
         if (mState != State_Loaded)
             throw std::runtime_error("moveTo: can't move object from a non-loaded cell (how did you get this object anyway?)");
 
-        // Ensure that the object actually exists in the cell
-        if (searchViaRefNum(object.getCellRef().getRefNum()).isEmpty())
+        // Check natively present refs AND refs already tracked in mMovedToAnotherCell —
+        // both physically live in this cell's typed lists, but the latter are invisible
+        // to searchViaRefNum because MergeVisitor skips them.
+        MovedRefTracker::iterator alreadyMoved = mMovedToAnotherCell.find(object.getBase());
+        bool existsHere = (alreadyMoved != mMovedToAnotherCell.end())
+            || !searchViaRefNum(object.getCellRef().getRefNum()).isEmpty();
+
+        if (!existsHere)
+        {
             throw std::runtime_error("moveTo: object is not in this cell");
-
-
-        // Objects with no refnum can't be handled correctly in the merging process that happens
-        // on a save/load, so do a simple copy & delete for these objects.
+        }
 
         /*
             Start of tes3mp change (major)
@@ -346,12 +350,10 @@ namespace MWWorld
             // Special case - object didn't originate in this cell
             // Move it back to its original cell first
             CellStore* originalCell = found->second;
-            assert (originalCell != this);
+            assert(originalCell != this);
             originalCell->moveFrom(object, this);
-
             mMovedHere.erase(found);
 
-            // Now that object is back to its rightful owner, we can move it
             if (cellToMoveTo != originalCell)
             {
                 /*
@@ -367,7 +369,7 @@ namespace MWWorld
                 /*
                     End of tes3mp addition
                 */
-                
+
                 originalCell->moveTo(object, cellToMoveTo);
             }
 
@@ -375,8 +377,19 @@ namespace MWWorld
             return MWWorld::Ptr(object.getBase(), cellToMoveTo);
         }
 
-        cellToMoveTo->moveFrom(object, this);
-        mMovedToAnotherCell.insert(std::make_pair(object.getBase(), cellToMoveTo));
+        if (alreadyMoved != mMovedToAnotherCell.end())
+        {
+            // Ref was already moved to a previous destination — retarget in place.
+            CellStore* oldDest = alreadyMoved->second;
+            oldDest->mMovedHere.erase(object.getBase());
+            alreadyMoved->second = cellToMoveTo;
+            cellToMoveTo->moveFrom(object, this);
+        }
+        else
+        {
+            cellToMoveTo->moveFrom(object, this);
+            mMovedToAnotherCell.insert(std::make_pair(object.getBase(), cellToMoveTo));
+        }
 
         updateMergedRefs();
         return MWWorld::Ptr(object.getBase(), cellToMoveTo);
@@ -388,26 +401,118 @@ namespace MWWorld
         Make it possible to clear the moves to other cells tracked for objects, allowing for
         on-the-fly cell resets that don't cause crashes
     */
-    void CellStore::clearMovesToCells()
+    bool CellStore::clearMovesToCells()
     {
         MWBase::World* world = MWBase::Environment::get().getWorld();
+        mwmp::CellController* cellController = mwmp::Main::get().getCellController();
 
-        for (auto &reference : mMovedHere)
+        //if (!mMovedHere.empty() || !mMovedToAnotherCell.empty())
+        //{
+        //    std::cout << "[CellStore] Skipping cell reset due to object(s) moved here from another cell." << std::endl;
+        //    return true;
+        //}
+
+        // Actors that physically live in this cell but walked into another cell
+        // have their Ptr keyed in subsystems as {mRef = our list node, mCell = destCell}.
+        // drop(thisCell) won't find them. Delete them now before our lists are freed.
+        // Snapshot first — deleteObject can fire callbacks that modify mMovedToAnotherCell.
+        const auto movedToAnother = mMovedToAnotherCell; // copy
+
+        for (const auto& pair : movedToAnother)
         {
-            MWWorld::CellStore *otherCell = reference.second;
+            MWWorld::LiveCellRefBase* ref = pair.first;
+            MWWorld::CellStore* destCell = pair.second;
 
+            // Clean tes3mp tracking before the ptr goes invalid
+            int refNum = ref->mRef.getRefNum().mIndex;
+            int mpNum = ref->mRef.getMpNum();
+
+            if (cellController->isLocalActor(refNum, mpNum))
+                cellController->removeLocalActorRecord(
+                    cellController->generateMapIndex(refNum, mpNum));
+            else if (cellController->isDedicatedActor(refNum, mpNum))
+                cellController->removeDedicatedActorRecord(
+                    cellController->generateMapIndex(refNum, mpNum));
+            else if (mwmp::PlayerList::isDedicatedPlayer(MWWorld::Ptr(ref, destCell)))
+            {
+                // DedicatedPlayer refs are ManualRef-owned and will be cleaned up
+                // by resetCells via deleteReference(). Skip deleteObject here.
+                continue;
+            }
+
+            world->deleteObject(MWWorld::Ptr(ref, destCell));
+        }
+
+        // Patch the other side of mMovedHere tracking for refs that moved INTO this cell.
+        // Also rebuild mMergedRefs on the origin cell — it has a mMovedToAnotherCell entry
+        // pointing at our ref, and we're about to free our storage, so its mMergedRefs
+        // would contain a dangling pointer if we don't rebuild it now.
+        for (auto& reference : mMovedHere)
+        {
+            MWWorld::CellStore* otherCell = reference.second;
             otherCell->mMovedToAnotherCell.erase(reference.first);
+            otherCell->updateMergedRefs();
         }
 
-        for (auto &reference : mMovedToAnotherCell)
+        // Patch the other side of mMovedToAnotherCell tracking.
+        // Rebuild mMergedRefs on the destination cell — it has a mMovedHere entry for
+        // this ref (physically in our lists), and after we free our storage those
+        // pointers in its mMergedRefs would dangle.
+        for (auto& reference : mMovedToAnotherCell)
         {
-            MWWorld::CellStore *otherCell = reference.second;
-            
+            MWWorld::CellStore* otherCell = reference.second;
             otherCell->mMovedHere.erase(reference.first);
+            otherCell->updateMergedRefs();
         }
 
-        mMovedHere.empty();
-        mMovedToAnotherCell.empty();
+        mMovedHere.clear();
+        mMovedToAnotherCell.clear();
+
+        return false;
+    }
+
+    bool CellStore::physicallyOwnsRef(const MWWorld::LiveCellRefBase* ref) const
+    {
+        // Case 1: ref was here natively and has been moved to another cell via moveTo().
+        // It still physically lives in this store's typed list but is tracked in mMovedToAnotherCell.
+        if (mMovedToAnotherCell.find(const_cast<LiveCellRefBase*>(ref)) != mMovedToAnotherCell.end())
+            return true;
+
+        // Case 2: ref is natively present and has not been moved away.
+        // mMergedRefs contains all refs currently visible in this cell (native minus moved-away,
+        // plus moved-here), so a ref that's native AND not moved away will appear here.
+        // (We want native-and-not-moved-away, so checking mMergedRefs is correct.)
+        for (const auto* r : mMergedRefs)
+            if (r == ref) return true;
+
+        return false;
+    }
+
+    void CellStore::evictMovedRef(MWWorld::LiveCellRefBase* ref)
+    {
+        // Case 1: this cell is the logical destination — ref physically lives in nativeCell
+        // but mMovedHere[ref] = nativeCell here.
+        auto it = mMovedHere.find(ref);
+        if (it != mMovedHere.end())
+        {
+            MWWorld::CellStore* nativeCell = it->second;
+            nativeCell->mMovedToAnotherCell.erase(ref);
+            nativeCell->updateMergedRefs();
+            mMovedHere.erase(it);
+            updateMergedRefs();
+            return;
+        }
+        // Case 2: this cell is the native cell — ref physically lives here but
+        // mMovedToAnotherCell[ref] = destCell.
+        auto it2 = mMovedToAnotherCell.find(ref);
+        if (it2 != mMovedToAnotherCell.end())
+        {
+            MWWorld::CellStore* destCell = it2->second;
+            destCell->mMovedHere.erase(ref);
+            destCell->updateMergedRefs();
+            mMovedToAnotherCell.erase(it2);
+            updateMergedRefs();
+        }
     }
     /*
         End of tes3mp addition

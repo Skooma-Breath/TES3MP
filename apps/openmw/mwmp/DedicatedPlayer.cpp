@@ -389,15 +389,14 @@ void DedicatedPlayer::setShapeshift()
 
 void DedicatedPlayer::setCell()
 {
-    // Prevent cell update when reference doesn't exist
     if (!reference) return;
 
-    MWBase::World *world = MWBase::Environment::get().getWorld();
+    MWBase::World* world = MWBase::Environment::get().getWorld();
 
     LOG_MESSAGE_SIMPLE(TimedLog::LOG_INFO, "Server says DedicatedPlayer %s moved to %s",
         npc.mName.c_str(), cell.getShortDescription().c_str());
 
-    MWWorld::CellStore *cellStore = Main::get().getCellController()->getCellStore(cell);
+    MWWorld::CellStore* cellStore = Main::get().getCellController()->getCellStore(cell);
 
     if (!cellStore)
     {
@@ -408,31 +407,26 @@ void DedicatedPlayer::setCell()
     else
         world->enable(getPtr());
 
-    // Make sure the Ptr's dynamic stats and anim flags are up-to-date, so it doesn't show up
-    // knocked down or in a jump loop when it shouldn't
+    // Recreate the reference in the new cell instead of using moveObject/moveTo.
+    // moveTo tracks refs via mMovedHere/mMovedToAnotherCell keyed on raw CellStore*
+    // pointers; transient cells (e.g. $Transitional Void) can be destroyed mid-chain,
+    // leaving dangling pointers that corrupt cell tracking and crash on cell reload.
+    // deleteReference/createReference is always safe for ManualRef-backed players.
+    deleteReference();
+    createReference(npc.mId);
+
+    // Apply dynamic stats and anim flags to the freshly created reference.
     setStatsDynamic();
     setAnimFlags();
 
-    // Allow this player's reference to move across a cell now that a manual cell
-    // update has been called
-    setPtr(world->moveObject(ptr, cellStore, position.pos[0], position.pos[1], position.pos[2]));
-
-    // Remove the marker entirely if this player has moved to an interior that is inactive for us
     if (!cell.isExterior() && !Main::get().getCellController()->isActiveWorldCell(cell))
         removeMarker();
-    // Otherwise, update their marker so the player shows up in the right cell on the world map
     else
-    {
         enableMarker();
-    }
 
-    // If this player is now in a cell that we are the local authority over, we should send them all
-    // NPC data in that cell
     if (Main::get().getCellController()->hasLocalAuthority(cell))
         Main::get().getCellController()->getCell(cell)->updateLocal(true);
 
-    // If this player is a new player or is now in a region that we are the weather authority over,
-    // or is a new player, we should send our latest weather data to the server
     if (world->getWeatherCreationState())
     {
         if (!hasFinishedInitialTeleportation || Misc::StringUtils::ciEqual(getPtr().getCell()->getCell()->mRegion,
@@ -593,16 +587,24 @@ void DedicatedPlayer::createReference(const std::string& recId)
 
     ptr = world->placeObject(reference->getPtr(), Main::get().getCellController()->getCellStore(cell), position);
 
-    ESM::CustomMarker mEditingMarker = Main::get().getGUIController()->createMarker(guid);
-    marker = mEditingMarker;
-    enableMarker();
+    //ESM::CustomMarker mEditingMarker = Main::get().getGUIController()->createMarker(guid);
+    //marker = mEditingMarker;
+    //enableMarker();
 }
 
 void DedicatedPlayer::deleteReference()
 {
-    MWBase::World *world = MWBase::Environment::get().getWorld();
+    MWBase::World* world = MWBase::Environment::get().getWorld();
 
     LOG_APPEND(TimedLog::LOG_INFO, "- Deleting reference");
+
+    // Evict cross-cell move tracking before freeing the LiveCellRefBase.
+    // Without this, a new ManualRef at the same address finds stale
+    // mMovedToAnotherCell/mMovedHere entries → "found->second != from" mismatches
+    // → corrupt cell tracking → dangling pointer crash on next cell reload.
+    if (ptr.getCell() != nullptr)
+        ptr.getCell()->evictMovedRef(ptr.mRef);
+
     world->deleteObject(ptr);
     delete reference;
     reference = nullptr;

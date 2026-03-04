@@ -46,11 +46,17 @@ DedicatedPlayer *PlayerList::newPlayer(RakNet::RakNetGUID guid)
 
 void PlayerList::deletePlayer(RakNet::RakNetGUID guid)
 {
-    if (playerList[guid]->reference)
-        playerList[guid]->deleteReference();
+    auto it = playerList.find(guid);
+    if (it == playerList.end()) return;
 
-    delete playerList[guid];
-    playerList.erase(guid);
+    DedicatedPlayer* dp = it->second;
+    if (dp)
+    {
+        if (dp->reference)
+            dp->deleteReference();
+        delete dp;
+    }
+    playerList.erase(it);
 }
 
 void PlayerList::cleanUp()
@@ -59,9 +65,10 @@ void PlayerList::cleanUp()
         delete playerEntry.second;
 }
 
-DedicatedPlayer *PlayerList::getPlayer(RakNet::RakNetGUID guid)
+DedicatedPlayer* PlayerList::getPlayer(RakNet::RakNetGUID guid)
 {
-    return playerList[guid];
+    auto it = playerList.find(guid);
+    return (it != playerList.end()) ? it->second : nullptr;
 }
 
 DedicatedPlayer *PlayerList::getPlayer(const MWWorld::Ptr &ptr)
@@ -159,4 +166,33 @@ void PlayerList::clearHitAttemptActorId(int actorId)
         if (playerCreatureStats.getHitAttemptActorId() == actorId)
             playerCreatureStats.setHitAttemptActorId(-1);
     }
+}
+
+std::vector<DedicatedPlayer*> PlayerList::getPlayersWithCellStore(const MWWorld::CellStore* cellStore)
+{
+    std::vector<DedicatedPlayer*> result;
+    for (auto& playerEntry : playerList)
+    {
+        DedicatedPlayer* player = playerEntry.second;
+        if (player == nullptr) continue;   // guard against null entries 
+        if (!player->getRef()) continue;
+
+        MWWorld::Ptr ptr = player->getPtr();
+
+        // Primary check: logical cell (ptr.mCell) matches — the normal in-cell case.
+        if (ptr.getCell() == cellStore)
+        {
+            result.push_back(player);
+            continue;
+        }
+
+        // Secondary check: this CellStore physically owns the raw ref pointer.
+        // This catches the post-moveTo() case: moveTo() moves the ref in the typed
+        // lists and updates ptr.mCell to the destination, but the raw LiveCellRefBase
+        // still physically lives in the origin store's mMovedToAnotherCell list.
+        // If we reset the origin cell without catching this, ptr.mRef becomes dangling.
+        if (ptr.mRef != nullptr && cellStore->physicallyOwnsRef(ptr.mRef))
+            result.push_back(player);
+    }
+    return result;
 }

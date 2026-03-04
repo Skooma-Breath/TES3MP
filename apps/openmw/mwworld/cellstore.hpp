@@ -200,7 +200,19 @@ namespace MWWorld
                 Make it possible to clear the moves to other cells tracked for objects, allowing for
                 on-the-fly cell resets that don't cause crashes
             */
-            void clearMovesToCells();
+            bool clearMovesToCells();
+
+            /// Returns true if this CellStore physically owns \a ref — i.e., the ref is
+            /// either still natively present here (in mMergedRefs) or was here originally
+            /// but moved away via moveTo() (tracked in mMovedToAnotherCell). This catches
+            /// DedicatedPlayers whose ptr.mRef lives in this store but ptr.mCell was updated
+            /// to point at a different cell by moveTo().
+            bool physicallyOwnsRef(const MWWorld::LiveCellRefBase* ref) const;
+
+            /// Remove cross-cell moveTo() tracking for \a ref before its ManualRef is freed.
+            /// Prevents stale-address-reuse bugs when a new ManualRef is allocated at the
+            /// same address as a previously deleted DedicatedPlayer ref.
+            void evictMovedRef(MWWorld::LiveCellRefBase* ref);
             /*
                 End of tes3mp addition
             */

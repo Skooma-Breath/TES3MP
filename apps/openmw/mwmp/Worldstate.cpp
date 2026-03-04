@@ -476,6 +476,7 @@ void Worldstate::setWeather()
 void Worldstate::resetCells(std::vector<ESM::Cell>* cells)
 {
     MWBase::World* world = MWBase::Environment::get().getWorld();
+    mwmp::CellController* cellController = mwmp::Main::get().getCellController();
 
     bool haveUnloadedActiveCells = false;
     ESM::Cell playerCell = *world->getPlayerPtr().getCell()->getCell();
@@ -490,38 +491,95 @@ void Worldstate::resetCells(std::vector<ESM::Cell>* cells)
             {
                 playersInCell = mwmp::PlayerList::getPlayersInCell(cell);
 
-                // If there are any DedicatedPlayers in this cell, also move them to the temporary holding interior cell
+                // If there are any DedicatedPlayers in this cell, delete and recreate
+                // their references in the temporary holding interior cell.
+                // Using deleteReference/createReference instead of setCell() avoids
+                // going through moveObject/moveTo, which throws if the DedicatedPlayer's
+                // ptr.mCell is a logical destination that doesn't physically own the ref.
                 if (!playersInCell.empty())
                 {
                     for (RakNet::RakNetGUID otherGuid : playersInCell)
                     {
                         DedicatedPlayer* dedicatedPlayer = mwmp::PlayerList::getPlayer(otherGuid);
-                        dedicatedPlayer->cell = *world->getInterior(RecordHelper::getPlaceholderInteriorCellName())->getCell();
-                        dedicatedPlayer->setCell();
+                        if (dedicatedPlayer->getRef())
+                        {
+                            dedicatedPlayer->deleteReference();
+                            dedicatedPlayer->cell = *world->getInterior(RecordHelper::getPlaceholderInteriorCellName())->getCell();
+                            dedicatedPlayer->createReference(dedicatedPlayer->npc.mId);
+                        }
                     }
                 }
 
                 // Change to temporary holding interior cell
                 world->changeToInteriorCell(RecordHelper::getPlaceholderInteriorCellName(), playerPos, true, true);
 
-                mwmp::Main::get().getCellController()->uninitializeCells();
+                cellController->uninitializeCells();
                 world->unloadActiveCells();
 
                 haveUnloadedActiveCells = true;
             }
         }
 
+        // Capture the CellStore pointer AND any affected DedicatedPlayers BEFORE
+        // clearCellStore runs. clearCellStore calls clearMovesToCells() which wipes
+        // mMovedToAnotherCell, so physicallyOwnsRef would find nothing if called after.
+        MWWorld::CellStore* oldCellStore = cellController->getCellStore(cell);
+
+        // Build the full refresh list now, while mMovedToAnotherCell is still intact.
+        // This catches:
+        //   (a) players whose ptr.mCell == this cell (normal in-cell case), AND
+        //   (b) players whose ptr.mRef physically lives here but ptr.mCell points
+        //       elsewhere (post-moveTo case, tracked in mMovedToAnotherCell).
+        std::vector<DedicatedPlayer*> playersToRefresh;
+        if (oldCellStore != nullptr)
+        {
+            for (DedicatedPlayer* dedicatedPlayer : mwmp::PlayerList::getPlayersWithCellStore(oldCellStore))
+            {
+                // Skip players already in playersInCell — they are handled by the loop below.
+                bool alreadyHandled = false;
+                for (RakNet::RakNetGUID guid : playersInCell)
+                    if (mwmp::PlayerList::getPlayer(guid) == dedicatedPlayer) { alreadyHandled = true; break; }
+                if (!alreadyHandled)
+                    playersToRefresh.push_back(dedicatedPlayer);
+            }
+        }
+
         world->clearCellStore(cell);
 
+        // Move DedicatedPlayers that were in the cell back to the reset cell.
         for (RakNet::RakNetGUID otherGuid : playersInCell)
         {
             DedicatedPlayer* dedicatedPlayer = mwmp::PlayerList::getPlayer(otherGuid);
-            dedicatedPlayer->cell = cell;
-            dedicatedPlayer->setCell();
+            if (dedicatedPlayer->getRef())
+            {
+                dedicatedPlayer->deleteReference();
+                dedicatedPlayer->cell = cell;
+                dedicatedPlayer->createReference(dedicatedPlayer->npc.mId);
+            }
+        }
+
+        // Refresh players whose ref was physically owned by the reset cell but whose
+        // ptr.mCell had already been updated to a different cell by a prior moveTo().
+        // These were captured before clearCellStore wiped mMovedToAnotherCell.
+        for (DedicatedPlayer* dedicatedPlayer : playersToRefresh)
+        {
+            LOG_MESSAGE_SIMPLE(TimedLog::LOG_INFO,
+                "resetCells: refreshing DedicatedPlayer %s whose ptr was physically in reset cell %s",
+                dedicatedPlayer->npc.mName.c_str(),
+                cell.getDescription().c_str());
+
+            // clearMovesToCells already called deleteObject on this ref, so the world
+            // object is marked deleted. deleteReference handles the ManualRef cleanup.
+            if (dedicatedPlayer->getRef())
+            {
+                dedicatedPlayer->deleteReference();
+                dedicatedPlayer->cell = cell;
+                dedicatedPlayer->createReference(dedicatedPlayer->npc.mId);
+            }
         }
     }
 
-    // Move the player from their temporary holding cell to their previous cell
+    // Move the local player from their temporary holding cell back to their previous cell
     if (haveUnloadedActiveCells)
     {
         if (playerCell.isExterior())

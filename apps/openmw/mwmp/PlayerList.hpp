@@ -25,6 +25,8 @@ namespace mwmp
     {
     public:
 
+        static std::vector<DedicatedPlayer*> getPlayersWithCellStore(const MWWorld::CellStore* cellStore);
+
         static void update(float dt);
 
         static DedicatedPlayer *newPlayer(RakNet::RakNetGUID guid);
