@@ -389,6 +389,7 @@ void DedicatedPlayer::setShapeshift()
 
 void DedicatedPlayer::setCell()
 {
+    // Prevent cell update when reference doesn't exist
     if (!reference) return;
 
     MWBase::World* world = MWBase::Environment::get().getWorld();
@@ -407,26 +408,31 @@ void DedicatedPlayer::setCell()
     else
         world->enable(getPtr());
 
-    // Recreate the reference in the new cell instead of using moveObject/moveTo.
-    // moveTo tracks refs via mMovedHere/mMovedToAnotherCell keyed on raw CellStore*
-    // pointers; transient cells (e.g. $Transitional Void) can be destroyed mid-chain,
-    // leaving dangling pointers that corrupt cell tracking and crash on cell reload.
-    // deleteReference/createReference is always safe for ManualRef-backed players.
-    deleteReference();
-    createReference(npc.mId);
-
-    // Apply dynamic stats and anim flags to the freshly created reference.
+    // Make sure the Ptr's dynamic stats and anim flags are up-to-date, so it doesn't show up
+    // knocked down or in a jump loop when it shouldn't
     setStatsDynamic();
     setAnimFlags();
 
+    // Allow this player's reference to move across a cell now that a manual cell
+    // update has been called
+    setPtr(world->moveObject(ptr, cellStore, position.pos[0], position.pos[1], position.pos[2]));
+
+    // Remove the marker entirely if this player has moved to an interior that is inactive for us
     if (!cell.isExterior() && !Main::get().getCellController()->isActiveWorldCell(cell))
         removeMarker();
+    // Otherwise, update their marker so the player shows up in the right cell on the world map
     else
+    {
         enableMarker();
+    }
 
+    // If this player is now in a cell that we are the local authority over, we should send them all
+    // NPC data in that cell
     if (Main::get().getCellController()->hasLocalAuthority(cell))
         Main::get().getCellController()->getCell(cell)->updateLocal(true);
 
+    // If this player is a new player or is now in a region that we are the weather authority over,
+    // or is a new player, we should send our latest weather data to the server
     if (world->getWeatherCreationState())
     {
         if (!hasFinishedInitialTeleportation || Misc::StringUtils::ciEqual(getPtr().getCell()->getCell()->mRegion,
@@ -538,6 +544,7 @@ void DedicatedPlayer::setSpellsActive()
 
 void DedicatedPlayer::updateMarker()
 {
+    return; // markerless for now
     if (!markerEnabled)
     {
         return;
@@ -559,12 +566,14 @@ void DedicatedPlayer::updateMarker()
 
 void DedicatedPlayer::enableMarker()
 {
+    return; // markerless for now
     markerEnabled = true;
     updateMarker();
 }
 
 void DedicatedPlayer::removeMarker()
 {
+    return; // markerless for now
     if (!markerEnabled)
         return;
 

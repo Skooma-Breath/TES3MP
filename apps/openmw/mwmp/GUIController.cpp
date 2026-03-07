@@ -327,6 +327,8 @@ ESM::CustomMarker mwmp::GUIController::createMarker(const RakNet::RakNetGUID &gu
 
 void mwmp::GUIController::updatePlayersMarkers(MWGui::LocalMapBase *localMapBase)
 {
+    return; // markerless for now
+
     std::vector<MyGUI::Widget*>::iterator markerWidgetIterator = localMapBase->mPlayerMarkerWidgets.begin();
     for (; markerWidgetIterator != localMapBase->mPlayerMarkerWidgets.end(); ++markerWidgetIterator)
         MyGUI::Gui::getInstance().destroyWidget(*markerWidgetIterator);

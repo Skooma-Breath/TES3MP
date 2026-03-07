@@ -783,7 +783,7 @@ void ObjectList::rotateObjects(MWWorld::CellStore* cellStore)
                                ptrFound.getCellRef().getRefNum(), ptrFound.getCellRef().getMpNum());
 
             MWBase::Environment::get().getWorld()->rotateObject(ptrFound,
-                                                                baseObject.position.rot[0], baseObject.position.rot[1], baseObject.position.rot[2], MWBase::RotationFlag_none);
+                                                                baseObject.position.rot[0], baseObject.position.rot[1], baseObject.position.rot[2]);
         }
     }
 }
