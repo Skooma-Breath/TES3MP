@@ -3,7 +3,7 @@ name: Windows Release
 on:
   push:
     branches:
-      - test
+      - FETCHER
       - 'fix/*'
       - 'feat/*'
   workflow_dispatch:
