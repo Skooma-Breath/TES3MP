@@ -547,6 +547,13 @@ if ! [ -z $USE_CCACHE ]; then
 	add_cmake_opts "-DCMAKE_C_COMPILER_LAUNCHER=ccache  -DCMAKE_CXX_COMPILER_LAUNCHER=ccache"
 fi
 
+if ! [ -z $USE_SCCACHE ]; then
+    add_cmake_opts "-DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache"
+    # sccache requires /Z7 (embedded per-obj debug info) not /Zi (shared .pdb).
+    # CMP0141 is NEW in CMakeLists.txt specifically to enable this variable.
+    add_cmake_opts "-DCMAKE_MSVC_DEBUG_INFORMATION_FORMAT=Embedded"
+fi
+
 # turn on LTO by default
 if ! [ -z "USE_LTO" ]; then
 add_cmake_opts "-DOPENMW_LTO_BUILD=True"

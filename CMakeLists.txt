@@ -941,6 +941,12 @@ elseif(NOT APPLE)
         INSTALL(FILES "${INSTALL_SOURCE}/tes3mp-client-default.cfg" DESTINATION ".")
         INSTALL(FILES "${INSTALL_SOURCE}/tes3mp-server-default.cfg" DESTINATION ".")
         # End of tes3mp addition
+         
+        # Start of tes3mp addition
+        IF(BUILD_OPENMW_MP)
+            INSTALL(PROGRAMS "${INSTALL_SOURCE}/tes3mp-server.exe" DESTINATION ".")
+        ENDIF(BUILD_OPENMW_MP)
+        # End of tes3mp addition
         INSTALL(FILES "${INSTALL_SOURCE}/gamecontrollerdb.txt" DESTINATION ".")
 
         INSTALL(DIRECTORY "${INSTALL_SOURCE}/resources" DESTINATION ".")

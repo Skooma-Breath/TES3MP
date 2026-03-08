@@ -1,0 +1,89 @@
+name: Windows Release
+
+on:
+  push:
+    branches:
+      - test
+      - 'fix/*'
+      - 'feat/*'
+  workflow_dispatch:
+
+env:
+  BUILD_TYPE: RelWithDebInfo
+  BUILD_DIR: MSVC2022_64_Ninja
+
+permissions:
+  contents: write
+
+jobs:
+  Windows-Release:
+    runs-on: windows-2022
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Cache downloaded dependencies
+        uses: actions/cache@v4
+        with:
+          path: deps
+          key: windows-deps-${{ hashFiles('CI/before_script.msvc.sh') }}
+          restore-keys: |
+            windows-deps-
+
+      - name: Prime sccache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          key: windows-${{ env.BUILD_TYPE }}
+          max-size: 1000M
+          variant: sccache
+          append-timestamp: true
+
+      - name: Configure
+        env:
+          CI: true
+          STEP: full
+          USE_SCCACHE: "1"
+        run: |
+          CI/before_script.msvc.sh \
+            -v 2022 \
+            -p x64 \
+            -c ${{ env.BUILD_TYPE }} \
+            -N \
+            -i "$PWD/install"
+
+      - name: Build
+        run: |
+          cd ${{ env.BUILD_DIR }}
+          source activate_msvc.sh
+          cmake --build . --config ${{ env.BUILD_TYPE }} --parallel
+
+      - name: Install
+        run: |
+          cd ${{ env.BUILD_DIR }}
+          source activate_msvc.sh
+          cmake --install . --config ${{ env.BUILD_TYPE }}
+
+      - name: Remove PDB files
+        run: find install/ -name "*.pdb" -delete
+
+      - name: Zip artifact
+        run: |
+          cd install
+          7z a ../tes3mp-windows-x64.zip .
+
+      - name: Update release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: FETCHER
+          name: FETCHER
+          body: |
+            Automated Windows build from branch `${{ github.ref_name }}` @ ${{ github.sha }}
+          prerelease: false
+          files: tes3mp-windows-x64.zip
