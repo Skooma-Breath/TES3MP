@@ -73,6 +73,174 @@ jobs:
       - name: Remove PDB files
         run: find install/ -name "*.pdb" -delete
 
+      - name: Setup MSVC (x64)
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
+      # ── LuaJIT ────────────────────────────────────────────────────────────
+      - name: Build LuaJIT
+        shell: cmd
+        run: |
+          git clone --depth 1 https://github.com/Skooma-Breath/LuaJIT.git luajit-src
+          cd luajit-src\src
+          call msvcbuild.bat
+
+      - name: Verify LuaJIT and export paths
+        run: |
+          LUAJIT_INCLUDE="$(pwd)/luajit-src/src"
+          LUAJIT_LIB="$(pwd)/luajit-src/src/lua51.lib"
+
+          if [ ! -f "$LUAJIT_LIB" ]; then
+            echo "ERROR: lua51.lib not found. src/ contents:"
+            ls luajit-src/src/
+            exit 1
+          fi
+
+          echo "LUAJIT_INCLUDE=$LUAJIT_INCLUDE" >> $GITHUB_ENV
+          echo "LUAJIT_LIB=$LUAJIT_LIB"         >> $GITHUB_ENV
+          echo "Found include: $LUAJIT_INCLUDE"
+          echo "Found lib:     $LUAJIT_LIB"
+
+          mkdir -p install/server/lib
+          cp luajit-src/src/lua51.dll install/server/lib/
+
+      # ── Boost ─────────────────────────────────────────────────────────────
+      - name: Install Boost (vcpkg)
+        shell: cmd
+        run: |
+          vcpkg install boost-filesystem:x64-windows boost-system:x64-windows
+          vcpkg integrate install
+
+      - name: Export Boost paths
+        run: |
+          BOOST_ROOT_DIR="/c/vcpkg/installed/x64-windows"
+          echo "BOOST_ROOT=$BOOST_ROOT_DIR"                >> $GITHUB_ENV
+          echo "BOOST_INCLUDEDIR=$BOOST_ROOT_DIR/include"  >> $GITHUB_ENV
+          echo "BOOST_LIBRARYDIR=$BOOST_ROOT_DIR/lib"      >> $GITHUB_ENV
+
+      # ── cjson.dll ─────────────────────────────────────────────────────────
+      - name: Build cjson.dll
+        run: |
+          git clone --depth 1 https://github.com/TES3MP/lua-cjson.git lua-cjson-src
+
+          cmake -S lua-cjson-src -B lua-cjson-build \
+            -G "Ninja" \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DLUA_INCLUDE_DIR="$LUAJIT_INCLUDE" \
+            -DLUA_LIBRARY="$LUAJIT_LIB"
+
+          cmake --build lua-cjson-build --config Release
+
+          BUILT=$(find lua-cjson-build -name "*.dll" | grep -v lua51 | head -1)
+          echo "Built: $BUILT"
+          cp "$BUILT" install/server/lib/cjson.dll
+
+      # ── io2.dll ───────────────────────────────────────────────────────────
+      - name: Build io2.dll
+        run: |
+          git clone --depth 1 --recurse-submodules --shallow-submodules \
+            https://github.com/TES3MP/Lua-io2.git lua-io2-src
+
+          cmake -S lua-io2-src -B lua-io2-build \
+            -G "Ninja" \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DLuaJit_INCLUDE_DIR="$LUAJIT_INCLUDE" \
+            -DLuaJit_LIBRARY="$LUAJIT_LIB" \
+            -DCMAKE_TOOLCHAIN_FILE="/c/vcpkg/scripts/buildsystems/vcpkg.cmake" \
+            -DVCPKG_TARGET_TRIPLET=x64-windows
+
+          cmake --build lua-io2-build --config Release
+
+          BUILT=$(find lua-io2-build -name "*.dll" | grep -v lua51 | head -1)
+          echo "Built: $BUILT"
+          cp "$BUILT" install/server/lib/io2.dll
+
+      # ── SQLite3 static lib (for luasql) ───────────────────────────────────
+      - name: Build SQLite3
+        run: |
+          curl -fsSL -L \
+            "https://www.sqlite.org/2024/sqlite-amalgamation-3450100.zip" \
+            -o sqlite-amalgamation.zip
+          7z x sqlite-amalgamation.zip -osqlite-src -y
+          SQLITE_DIR=$(ls sqlite-src/)
+
+          mkdir -p sqlite3-build
+          cat > sqlite3-build/CMakeLists.txt << EOF
+          cmake_minimum_required(VERSION 3.15)
+          project(sqlite3)
+          add_library(sqlite3 STATIC "../sqlite-src/$SQLITE_DIR/sqlite3.c")
+          target_include_directories(sqlite3 PUBLIC "../sqlite-src/$SQLITE_DIR")
+          EOF
+
+          cmake -S sqlite3-build -B sqlite3-build/out -G "Ninja" -DCMAKE_BUILD_TYPE=Release
+          cmake --build sqlite3-build/out --config Release
+
+          echo "SQLITE3_INCLUDE=$(pwd)/sqlite-src/$SQLITE_DIR" >> $GITHUB_ENV
+          echo "SQLITE3_LIB=$(find $(pwd)/sqlite3-build/out -name 'sqlite3.lib' | head -1)" >> $GITHUB_ENV
+
+      # ── luasql ────────────────────────────────────────────────────────────
+      - name: Clone luasql
+        run: git clone --depth 1 https://github.com/lunarmodules/luasql.git luasql-src
+
+      - name: Build luasql/sqlite3.dll
+        shell: cmd
+        run: |
+          set WORKDIR=%CD%
+          for /f "tokens=*" %%i in ('dir /b sqlite-src') do set SQLITE_DIR=%%i
+
+          if not exist install\server\lib\luasql mkdir install\server\lib\luasql
+          if not exist luasql-sqlite3-build mkdir luasql-sqlite3-build
+
+          cl /MD /O2 /LD ^
+            /DLUASQL_VERSION_NUMBER=\"2.8.0\" ^
+            /I "%WORKDIR%\luajit-src\src" ^
+            /I "%WORKDIR%\sqlite-src\%SQLITE_DIR%" ^
+            /Fo"%WORKDIR%\luasql-sqlite3-build\\" ^
+            /Fe"%WORKDIR%\install\server\lib\luasql\sqlite3.dll" ^
+            "%WORKDIR%\luasql-src\src\luasql.c" ^
+            "%WORKDIR%\luasql-src\src\ls_sqlite3.c" ^
+            "%WORKDIR%\luajit-src\src\lua51.lib" ^
+            "%WORKDIR%\sqlite3-build\out\sqlite3.lib" ^
+            /link /DLL /EXPORT:luaopen_luasql_sqlite3
+
+      - name: Build luasql/postgres.dll
+        shell: cmd
+        run: |
+          set WORKDIR=%CD%
+          for /f "delims=" %%v in ('dir /b /ad "C:\Program Files\PostgreSQL\"') do set PG_VER=%%v
+          echo Using PostgreSQL %PG_VER%
+
+          if not exist luasql-postgres-build mkdir luasql-postgres-build
+
+          cl /MD /O2 /LD ^
+            /DLUASQL_VERSION_NUMBER=\"2.8.0\" ^
+            /I "%WORKDIR%\luajit-src\src" ^
+            /I "C:\Program Files\PostgreSQL\%PG_VER%\include" ^
+            /Fo"%WORKDIR%\luasql-postgres-build\\" ^
+            /Fe"%WORKDIR%\install\server\lib\luasql\postgres.dll" ^
+            "%WORKDIR%\luasql-src\src\luasql.c" ^
+            "%WORKDIR%\luasql-src\src\ls_postgres.c" ^
+            "%WORKDIR%\luajit-src\src\lua51.lib" ^
+            "C:\Program Files\PostgreSQL\%PG_VER%\lib\libpq.lib" ^
+            /link /DLL /EXPORT:luaopen_luasql_postgres
+
+      # ── CoreScripts ───────────────────────────────────────────────────────
+      - name: Download CoreScripts
+        run: |
+          curl -fsSL -L \
+            "https://github.com/TES3MP/CoreScripts/archive/refs/heads/0.8.1.zip" \
+            -o corescripts.zip
+
+          mkdir -p corescripts_staging
+          7z x corescripts.zip -o"corescripts_staging" -y
+          INNER_DIR=$(ls corescripts_staging/)
+          cp -r "corescripts_staging/$INNER_DIR/." install/server/
+
+      # ── Package & publish ─────────────────────────────────────────────────
+      - name: Verify server/lib layout
+        run: find install/server/lib
+
       - name: Zip artifact
         run: |
           cd install
