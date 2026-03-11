@@ -974,6 +974,7 @@ namespace MWWorld
 
     bool CellStore::isExterior() const
     {
+        if (!mCell) return false;
         return mCell->isExterior();
     }
 

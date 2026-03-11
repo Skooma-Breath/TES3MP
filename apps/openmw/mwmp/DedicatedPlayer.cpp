@@ -118,6 +118,10 @@ void DedicatedPlayer::move(float dt)
 {
     if (!reference) return;
 
+    // guard against an uninitialized or transitioning cell
+    MWWorld::CellStore* cellStore = ptr.getCell();
+    if (!cellStore || !cellStore->getCell()) return;
+
     ESM::Position refPos = ptr.getRefData().getPosition();
     MWBase::World *world = MWBase::Environment::get().getWorld();
     const int maxInterpolationDistance = 80;
