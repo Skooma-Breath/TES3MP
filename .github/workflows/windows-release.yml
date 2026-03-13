@@ -236,6 +236,21 @@ jobs:
           7z x corescripts.zip -o"corescripts_staging" -y
           INNER_DIR=$(ls corescripts_staging/)
           cp -r "corescripts_staging/$INNER_DIR/." install/server/
+          
+      # ── Patch version file from 0.8.1 release for server compatibility ──────
+      - name: Patch resources/version from TES3MP 0.8.1 release
+        run: |
+          curl -fsSL -L \
+            "https://github.com/TES3MP/TES3MP/releases/download/tes3mp-0.8.1/tes3mp.Win64.release.0.8.1.zip" \
+            -o tes3mp-0.8.1.zip
+      
+          # Extract only resources/version (flat) into a staging dir
+          7z e tes3mp-0.8.1.zip "resources/version" -o"version-staging" -y
+      
+          mkdir -p install/resources
+          cp version-staging/version install/resources/version
+          echo "Patched install/resources/version contents:"
+          cat install/resources/version
 
       # ── Package & publish ─────────────────────────────────────────────────
       - name: Verify server/lib layout
@@ -249,8 +264,8 @@ jobs:
       - name: Update release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: FETCHER
-          name: FETCHER
+          tag_name: FETCHERS
+          name: FETCHERS
           body: |
             Automated Windows build from branch `${{ github.ref_name }}` @ ${{ github.sha }}
           prerelease: false
