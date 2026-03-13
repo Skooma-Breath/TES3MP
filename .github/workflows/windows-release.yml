@@ -70,6 +70,9 @@ jobs:
           source activate_msvc.sh
           cmake --install . --config ${{ env.BUILD_TYPE }}
 
+      - name: Patch openmw.cfg with local config
+        run: cp files/openmw.cfg.local install/openmw.cfg
+
       - name: Remove PDB files
         run: find install/ -name "*.pdb" -delete
 
