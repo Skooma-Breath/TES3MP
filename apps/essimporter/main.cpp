@@ -17,7 +17,11 @@ int main(int argc, char** argv)
     try
     {
         bpo::options_description desc("Syntax: openmw-essimporter <options> infile.ess outfile.omwsave\nAllowed options");
+
+        Files::ConfigurationManager::addCommonOptions(desc);
+
         bpo::positional_options_description p_desc;
+
         desc.add_options()
             ("help,h", "produce help message")
             ("mwsave,m", bpo::value<std::string>(), "morrowind .ess save file")

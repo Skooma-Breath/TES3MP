@@ -87,6 +87,8 @@ std::pair<Files::PathContainer, std::vector<std::string> > CS::Editor::readConfi
     boost::program_options::variables_map variables;
     boost::program_options::options_description desc("Syntax: openmw-cs <options>\nAllowed options");
 
+    Files::ConfigurationManager::addCommonOptions(desc);
+
     desc.add_options()
     ("data", boost::program_options::value<Files::EscapePathContainer>()->default_value(Files::EscapePathContainer(), "data")->multitoken()->composing())
     ("data-local", boost::program_options::value<Files::EscapePath>()->default_value(Files::EscapePath(), ""))

@@ -2,6 +2,9 @@
 #define COMPONENTS_FILES_CONFIGURATIONMANAGER_HPP
 
 #include <map>
+#include <set>
+#include <stack>
+#include <vector>
 
 #include <boost/program_options.hpp>
 
@@ -14,43 +17,59 @@
 namespace Files
 {
 
-/**
- * \struct ConfigurationManager
- */
-struct ConfigurationManager
-{
-    ConfigurationManager(bool silent=false); /// @param silent Emit log messages to cout?
-    virtual ~ConfigurationManager();
+    /**
+     * \struct ConfigurationManager
+     */
+    struct ConfigurationManager
+    {
+        ConfigurationManager(bool silent = false); /// @param silent Emit log messages to cout?
+        virtual ~ConfigurationManager();
 
-    void readConfiguration(boost::program_options::variables_map& variables,
-        boost::program_options::options_description& description, bool quiet=false);
+        void readConfiguration(boost::program_options::variables_map& variables,
+            boost::program_options::options_description& description, bool quiet = false);
 
-    boost::program_options::variables_map separateComposingVariables(boost::program_options::variables_map& variables, boost::program_options::options_description& description);
+        /**
+         * Register common TES3MP config options. Call this on your options_description
+         * before readConfiguration (and before command_line_parser) so these options
+         * are recognised in openmw.cfg and on the CLI.
+         *
+         *   local-config=true   Skip ~/.config/tes3mp and read only the local config
+         *                       next to the binary.  Set in openmw.cfg.local for a
+         *                       portable install — no rebuild required.
+         *
+         *   config=<dir>        Chain in an additional config directory at lower
+         *                       priority.  May appear multiple times.  Set in
+         *                       openmw.cfg.local to pull in shared or per-server
+         *                       config trees.
+         */
+        static void addCommonOptions(boost::program_options::options_description& description);
 
-    void mergeComposingVariables(boost::program_options::variables_map& first, boost::program_options::variables_map& second, boost::program_options::options_description& description);
+        boost::program_options::variables_map separateComposingVariables(boost::program_options::variables_map& variables, boost::program_options::options_description& description);
 
-    void processPaths(Files::PathContainer& dataDirs, bool create = false);
-    ///< \param create Try creating the directory, if it does not exist.
+        void mergeComposingVariables(boost::program_options::variables_map& first, boost::program_options::variables_map& second, boost::program_options::options_description& description);
 
-    /**< Fixed paths */
-    const boost::filesystem::path& getGlobalPath() const;
-    const boost::filesystem::path& getUserConfigPath() const;
-    const boost::filesystem::path& getLocalPath() const;
+        void processPaths(Files::PathContainer& dataDirs, bool create = false) const;
+        ///< \param create Try creating the directory, if it does not exist.
 
-    const boost::filesystem::path& getGlobalDataPath() const;
-    const boost::filesystem::path& getUserDataPath() const;
-    const boost::filesystem::path& getLocalDataPath() const;
-    const boost::filesystem::path& getInstallPath() const;
+        /**< Fixed paths */
+        const boost::filesystem::path& getGlobalPath() const;
+        const boost::filesystem::path& getUserConfigPath() const;
+        const boost::filesystem::path& getLocalPath() const;
 
-    const boost::filesystem::path& getCachePath() const;
+        const boost::filesystem::path& getGlobalDataPath() const;
+        const boost::filesystem::path& getUserDataPath() const;
+        const boost::filesystem::path& getLocalDataPath() const;
+        const boost::filesystem::path& getInstallPath() const;
 
-    const boost::filesystem::path& getLogPath() const;
-    const boost::filesystem::path& getScreenshotPath() const;
+        const boost::filesystem::path& getCachePath() const;
+
+        const boost::filesystem::path& getLogPath() const;
+        const boost::filesystem::path& getScreenshotPath() const;
 
     private:
         typedef Files::FixedPath<> FixedPathType;
 
-        typedef const boost::filesystem::path& (FixedPathType::*path_type_f)() const;
+        typedef const boost::filesystem::path& (FixedPathType::* path_type_f)() const;
         typedef std::map<std::string, path_type_f> TokensMappingContainer;
 
         bool loadConfig(const boost::filesystem::path& path,
@@ -59,6 +78,9 @@ struct ConfigurationManager
 
         void setupTokensMapping();
 
+        void addExtraConfigDirs(std::stack<boost::filesystem::path>& dirs,
+            const boost::program_options::variables_map& variables) const;
+
         FixedPathType mFixedPath;
 
         boost::filesystem::path mLogPath;
@@ -66,8 +88,10 @@ struct ConfigurationManager
 
         TokensMappingContainer mTokensMapping;
 
+        std::vector<boost::filesystem::path> mActiveConfigPaths;
+
         bool mSilent;
-};
+    };
 } /* namespace Cfg */
 
 #endif /* COMPONENTS_FILES_CONFIGURATIONMANAGER_HPP */

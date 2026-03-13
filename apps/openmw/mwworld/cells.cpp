@@ -207,9 +207,12 @@ MWWorld::CellStore *MWWorld::Cells::getInterior (const std::string& name)
 
     if (result==mInteriors.end())
     {
-        const ESM::Cell *cell = mStore.get<ESM::Cell>().find(lowerName);
+        const ESM::Cell* cell = mStore.get<ESM::Cell>().find(lowerName);
 
-        result = mInteriors.insert (std::make_pair (lowerName, CellStore (cell, mStore, mReader))).first;
+        if (!cell)
+            throw std::runtime_error("Interior cell '" + name + "' not found in ESM store");
+
+        result = mInteriors.insert(std::make_pair(lowerName, CellStore(cell, mStore, mReader))).first;
     }
 
     if (result->second.getState()!=CellStore::State_Loaded)

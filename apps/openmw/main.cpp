@@ -64,6 +64,8 @@ bool parseOptions (int argc, char** argv, OMW::Engine& engine, Files::Configurat
 
     bpo::options_description desc("Syntax: openmw <options>\nAllowed options");
 
+    Files::ConfigurationManager::addCommonOptions(desc);
+
     desc.add_options()
         ("help", "print help message")
         ("version", "print version information and quit")

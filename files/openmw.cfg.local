@@ -1,11 +1,31 @@
-# This is the local openmw.cfg file. Do not modify!
-# Modifications should be done on the user openmw.cfg file instead
-# (see: https://openmw.readthedocs.io/en/master/reference/modding/paths.html)
+# This is the local openmw.cfg file.
+# User settings belong in ~/.config/tes3mp/openmw.cfg (created automatically
+# on first run). Settings there override this file.
+#
+# --- Portable / local-only mode ---
+# To skip the user home config entirely and read only this file (useful for
+# portable installs or running multiple TES3MP instances from separate
+# directories on the same machine), uncomment the line below:
+#
+#   local-config=true
+#
+# --- Extra config directories ---
+# To read from additional config directories you can add:
+#
+#   config=./otherconfigdirectory
+#
+# which will look for and then read an openmw.cfg file from the otherconfigdirectory folder.
 
+    
 data="?global?data"
 data=./data
 data-local="?userdata?data"
 resources=./resources
+
+fallback-archive=Morrowind.bsa
+fallback-archive=Tribunal.bsa
+fallback-archive=Bloodmoon.bsa
+
 script-blacklist=Museum
 script-blacklist=MockChangeScript
 script-blacklist=doortestwarp

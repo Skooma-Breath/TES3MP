@@ -867,7 +867,11 @@ namespace MWWorld
     {
         std::vector<ESM::ESMReader>& esm = mReader;
 
-        assert (mCell);
+        if (!mCell)
+        {
+            Log(Debug::Warning) << "CellStore::listRefs: mCell is null, skipping cell";
+            return;
+        }
 
         if (mCell->mContextList.empty())
             return; // this is a dynamically generated cell -> skipping.
