@@ -45,6 +45,9 @@ namespace MWWorld
 
     void DateTimeManager::setHour(double hour)
     {
+        if (!std::isfinite(hour))
+            hour = 0;
+
         if (hour < 0)
             hour = 0;
 
@@ -186,6 +189,9 @@ namespace MWWorld
         }
         else if (name=="dayspassed")
         {
+            if (!std::isfinite(value) || value < 0)
+                value = 0;
+
             mDaysPassed = static_cast<int>(value);
         }
 
@@ -219,6 +225,9 @@ namespace MWWorld
         }
         else if (name=="dayspassed")
         {
+            if (value < 0)
+                value = 0;
+
             mDaysPassed = value;
         }
 

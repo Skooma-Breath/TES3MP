@@ -400,6 +400,13 @@ namespace MWMechanics
     */
     void Spells::setPowerUseTimestamp(const ESM::Spell* spell, int startDay, float startHour)
     {
+        if (!MWWorld::TimeStamp::isValid(startHour, startDay))
+        {
+            Log(Debug::Warning) << "Ignoring invalid cooldown timestamp for " << spell->mId
+                << ": hour=" << startHour << ", day=" << startDay;
+            return;
+        }
+
         ESM::TimeStamp timestamp;
         timestamp.mDay = startDay;
         timestamp.mHour = startHour;

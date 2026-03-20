@@ -508,6 +508,13 @@ void DedicatedPlayer::addSpellsActive()
 
     for (const auto& activeSpell : spellsActiveChanges.activeSpells)
     {
+        if (!MWWorld::TimeStamp::isValid(activeSpell.timestampHour, activeSpell.timestampDay))
+        {
+            LOG_APPEND(TimedLog::LOG_WARN, "Ignoring active spell %s for %s with invalid timestamp %f/%i",
+                activeSpell.id.c_str(), npc.mName.c_str(), activeSpell.timestampHour, activeSpell.timestampDay);
+            continue;
+        }
+
         MWWorld::TimeStamp timestamp = MWWorld::TimeStamp(activeSpell.timestampHour, activeSpell.timestampDay);
         int casterActorId = MechanicsHelper::getActorId(activeSpell.caster);
 
@@ -527,6 +534,13 @@ void DedicatedPlayer::removeSpellsActive()
         // Remove stacking spells based on their timestamps
         if (activeSpell.isStackingSpell)
         {
+            if (!MWWorld::TimeStamp::isValid(activeSpell.timestampHour, activeSpell.timestampDay))
+            {
+                LOG_APPEND(TimedLog::LOG_WARN, "Ignoring removal of active spell %s for %s with invalid timestamp %f/%i",
+                    activeSpell.id.c_str(), npc.mName.c_str(), activeSpell.timestampHour, activeSpell.timestampDay);
+                continue;
+            }
+
             MWWorld::TimeStamp timestamp = MWWorld::TimeStamp(activeSpell.timestampHour, activeSpell.timestampDay);
             activeSpells.removeSpellByTimestamp(activeSpell.id, timestamp);
         }

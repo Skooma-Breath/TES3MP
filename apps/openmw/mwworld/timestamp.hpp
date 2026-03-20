@@ -22,6 +22,8 @@ namespace MWWorld
             ///< \param hour [0, 23)
             /// \param day >=0
 
+            static bool isValid(double hour, int day);
+
             explicit TimeStamp (const ESM::TimeStamp& esm);
             ESM::TimeStamp toEsm () const;
 

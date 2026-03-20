@@ -7,10 +7,15 @@
 
 namespace MWWorld
 {
+    bool TimeStamp::isValid(double hour, int day)
+    {
+        return std::isfinite(hour) && hour >= 0.0 && hour < 24.0 && day >= 0;
+    }
+
     TimeStamp::TimeStamp (float hour, int day)
     : mHour (hour), mDay (day)
     {
-        if (hour<0 || hour>=24 || day<0)
+        if (!isValid(hour, day))
             throw std::runtime_error ("invalid time stamp");
     }
 
