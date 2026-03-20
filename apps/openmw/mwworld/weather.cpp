@@ -688,6 +688,20 @@ void WeatherManager::playerTeleported(const std::string& playerRegion, bool isEx
         */
         else if (!isExterior)
             setWeatherCreationState(false);
+        else if (playerRegion.empty())
+        {
+            /*
+                Start of tes3mp addition
+
+                If we've moved to an exterior with no region, clear the previous region
+                so we don't keep sending weather updates for it as stale authority.
+            */
+            setWeatherCreationState(false);
+            mCurrentRegion.clear();
+            /*
+                End of tes3mp addition
+            */
+        }
         /*
             End of tes3mp addition
         */
@@ -766,6 +780,22 @@ void WeatherManager::update(float duration, bool paused, const TimeStamp& time, 
     {
         // Add new transitions when either the player's current external region changes.
         std::string playerRegion = Misc::StringUtils::lowerCase(player.getCell()->getCell()->mRegion);
+
+        if (isExterior && playerRegion.empty())
+        {
+            /*
+                Start of tes3mp addition
+
+                Exterior wilderness cells can have no region. Clear any previous region
+                authority so this client stops producing stale weather packets.
+            */
+            setWeatherCreationState(false);
+            mCurrentRegion.clear();
+            /*
+                End of tes3mp addition
+            */
+        }
+
         if(updateWeatherTime() || updateWeatherRegion(playerRegion))
         {
             std::map<std::string, RegionWeather>::iterator it = mRegions.find(mCurrentRegion);
