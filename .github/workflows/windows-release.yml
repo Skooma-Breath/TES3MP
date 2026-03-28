@@ -45,6 +45,39 @@ jobs:
           variant: sccache
           append-timestamp: true
 
+      - name: Setup MSVC (x64)
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
+      - name: Build LuaJIT (pre-configure)
+        shell: cmd
+        run: |
+          git clone --depth 1 https://github.com/Skooma-Breath/LuaJIT.git luajit-src
+          cd luajit-src\src
+          call msvcbuild.bat
+
+      - name: Verify LuaJIT and export paths
+        run: |
+          LUAJIT_INCLUDE="$(pwd)/luajit-src/src"
+          LUAJIT_LIB="$(pwd)/luajit-src/src/lua51.lib"
+          LUAJIT_DLL="$(pwd)/luajit-src/src/lua51.dll"
+
+          if [ ! -f "$LUAJIT_LIB" ] || [ ! -f "$LUAJIT_DLL" ]; then
+            echo "ERROR: LuaJIT outputs not found. src/ contents:"
+            ls luajit-src/src/
+            exit 1
+          fi
+
+          echo "LUAJIT_INCLUDE=$LUAJIT_INCLUDE"         >> $GITHUB_ENV
+          echo "LUAJIT_LIB=$LUAJIT_LIB"                 >> $GITHUB_ENV
+          echo "LUAJIT_INCLUDE_DIR=$LUAJIT_INCLUDE"     >> $GITHUB_ENV
+          echo "LUAJIT_LIBRARY=$LUAJIT_LIB"             >> $GITHUB_ENV
+          echo "LUAJIT_DLL=$LUAJIT_DLL"                 >> $GITHUB_ENV
+          echo "Found include: $LUAJIT_INCLUDE"
+          echo "Found lib:     $LUAJIT_LIB"
+          echo "Found dll:     $LUAJIT_DLL"
+
       - name: Configure
         env:
           CI: true
@@ -76,37 +109,11 @@ jobs:
       - name: Remove PDB files
         run: find install/ -name "*.pdb" -delete
 
-      - name: Setup MSVC (x64)
-        uses: ilammy/msvc-dev-cmd@v1
-        with:
-          arch: x64
-
-      # ── LuaJIT ────────────────────────────────────────────────────────────
-      - name: Build LuaJIT
-        shell: cmd
+      - name: Install LuaJIT runtime
         run: |
-          git clone --depth 1 https://github.com/Skooma-Breath/LuaJIT.git luajit-src
-          cd luajit-src\src
-          call msvcbuild.bat
-
-      - name: Verify LuaJIT and export paths
-        run: |
-          LUAJIT_INCLUDE="$(pwd)/luajit-src/src"
-          LUAJIT_LIB="$(pwd)/luajit-src/src/lua51.lib"
-
-          if [ ! -f "$LUAJIT_LIB" ]; then
-            echo "ERROR: lua51.lib not found. src/ contents:"
-            ls luajit-src/src/
-            exit 1
-          fi
-
-          echo "LUAJIT_INCLUDE=$LUAJIT_INCLUDE" >> $GITHUB_ENV
-          echo "LUAJIT_LIB=$LUAJIT_LIB"         >> $GITHUB_ENV
-          echo "Found include: $LUAJIT_INCLUDE"
-          echo "Found lib:     $LUAJIT_LIB"
-
           mkdir -p install/server/lib
-          cp luajit-src/src/lua51.dll install/server/lib/
+          cp "$LUAJIT_DLL" install/server/lib/lua51.dll
+      # ── LuaJIT ────────────────────────────────────────────────────────────
 
       # ── Boost ─────────────────────────────────────────────────────────────
       - name: Install Boost (vcpkg)

@@ -575,7 +575,11 @@ namespace MWMechanics
                 MWBase::Environment::get().getWorld()->getPlayer().getMarkedPosition(markedCell, markedPosition);
                 if (markedCell)
                 {
-                    MWWorld::ActionTeleport action(markedCell->isExterior() ? "" : markedCell->getCell()->mName,
+                    const ESM::Cell* markedEsmCell = markedCell->getCell();
+                    if (!markedEsmCell)
+                        return true;
+
+                    MWWorld::ActionTeleport action(markedCell->isExterior() ? "" : markedEsmCell->mName,
                                             markedPosition, false);
                     action.execute(target);
                     anim->removeEffect(effectId);

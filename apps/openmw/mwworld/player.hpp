@@ -11,6 +11,7 @@
 
 #include <components/esm/loadskil.hpp>
 #include <components/esm/attr.hpp>
+#include <components/esm/cellid.hpp>
 
 namespace ESM
 {
@@ -39,8 +40,8 @@ namespace MWWorld
         osg::Vec3f mLastKnownExteriorPosition;
 
         ESM::Position           mMarkedPosition;
-        // If no position was marked, this is nullptr
-        CellStore*              mMarkedCell;
+        ESM::CellId             mMarkedCellId;
+        bool                    mHasMark;
 
         bool                    mAutoMove;
         float                   mForwardBackward;

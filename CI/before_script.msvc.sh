@@ -658,9 +658,11 @@ if [ -z $SKIP_DOWNLOAD ]; then
 		"lz4_win${BITS}_v${LZ4_VER//./_}.7z"
 
 	# LuaJIT
-	download "LuaJIT ${LUAJIT_VER}" \
-		"https://github.com/Skooma-Breath/LuaJIT/releases/download/latest-build/luajit-windows-x86_64.zip" \
-		"LuaJIT.zip"
+	if [ -z "${LUAJIT_INCLUDE_DIR:-}" ] || [ -z "${LUAJIT_LIBRARY:-}" ] || [ -z "${LUAJIT_DLL:-}" ]; then
+		download "LuaJIT ${LUAJIT_VER}" \
+			"https://github.com/Skooma-Breath/LuaJIT/releases/download/latest-build/luajit-windows-x86_64.zip" \
+			"LuaJIT.zip"
+	fi
 
 	# ICU
 	download "ICU ${ICU_VER/_/.}"\
@@ -1011,17 +1013,32 @@ cd $DEPS
 echo
 printf "LuaJIT ${LUAJIT_VER}... "
 {
-	if [ -d LuaJIT ]; then
-		printf "Exists. "
-	elif [ -z $SKIP_EXTRACT ]; then
-		rm -rf LuaJIT
-		eval 7z x -y LuaJIT.zip -o$(real_pwd)/LuaJIT $STRIP
+	if [ -n "${LUAJIT_INCLUDE_DIR:-}" ] && [ -n "${LUAJIT_LIBRARY:-}" ] && [ -n "${LUAJIT_DLL:-}" ]; then
+		printf "Using environment overrides. "
+	else
+		if [ -d LuaJIT ]; then
+			printf "Exists. "
+		elif [ -z $SKIP_EXTRACT ]; then
+			rm -rf LuaJIT
+			eval 7z x -y LuaJIT.zip -o$(real_pwd)/LuaJIT $STRIP
+		fi
+
+		LUAJIT_INCLUDE_DIR="$(dirname "$(find "$(pwd)/LuaJIT" -type f -iname 'lua.h' -print -quit)")"
+		LUAJIT_LIBRARY="$(find "$(pwd)/LuaJIT" -type f -iname 'lua51.lib' -print -quit)"
+		LUAJIT_DLL="$(find "$(pwd)/LuaJIT" -type f -iname 'lua51.dll' -print -quit)"
+
+		if [ -z "${LUAJIT_INCLUDE_DIR}" ] || [ -z "${LUAJIT_LIBRARY}" ] || [ -z "${LUAJIT_DLL}" ]; then
+			echo "Failed."
+			echo "Error: Unable to locate LuaJIT include/lib/bin paths after extracting LuaJIT.zip"
+			find "$(pwd)/LuaJIT" -maxdepth 4 -print | head -100
+			wrappedExit 1
+		fi
 	fi
-	export LUAJIT_DIR="$(real_pwd)/LuaJIT"
-	add_cmake_opts -DLuaJit_INCLUDE_DIR="${LUAJIT_DIR}/include" \
-		-DLuaJit_LIBRARY="${LUAJIT_DIR}/lib/lua51.lib"
+
+	add_cmake_opts -DLuaJit_INCLUDE_DIR="${LUAJIT_INCLUDE_DIR}" \
+		-DLuaJit_LIBRARY="${LUAJIT_LIBRARY}"
 	for CONFIGURATION in ${CONFIGURATIONS[@]}; do
-		add_runtime_dlls $CONFIGURATION "$(pwd)/LuaJIT/bin/lua51.dll"
+		add_runtime_dlls $CONFIGURATION "${LUAJIT_DLL}"
 	done
 	echo Done.
 }
