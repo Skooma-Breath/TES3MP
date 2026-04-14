@@ -403,6 +403,7 @@ namespace MWWorld
     */
     bool CellStore::clearMovesToCells()
     {
+        std::lock_guard<std::recursive_mutex> lock(*mMutex);
         MWBase::World* world = MWBase::Environment::get().getWorld();
         mwmp::CellController* cellController = mwmp::Main::get().getCellController();
 
@@ -551,6 +552,7 @@ namespace MWWorld
 
     void CellStore::updateMergedRefs()
     {
+        std::lock_guard<std::recursive_mutex> lock(*mMutex);
         mMergedRefs.clear();
         mRechargingItemsUpToDate = false;
         MergeVisitor visitor(mMergedRefs, mMovedHere, mMovedToAnotherCell);
@@ -588,6 +590,7 @@ namespace MWWorld
 
     CellStore::CellStore (const ESM::Cell *cell, const MWWorld::ESMStore& esmStore, std::vector<ESM::ESMReader>& readerList)
         : mStore(esmStore), mReader(readerList), mCell (cell), mState (State_Unloaded), mHasState (false), mLastRespawn(0,0), mRechargingItemsUpToDate(false)
+        , mMutex(std::make_unique<std::recursive_mutex>())
     {
         mWaterLevel = cell->mWater;
     }
@@ -614,13 +617,14 @@ namespace MWWorld
 
     bool CellStore::hasId (const std::string& id) const
     {
+        std::lock_guard<std::recursive_mutex> lock(*mMutex);
         if (mState==State_Unloaded)
             return false;
 
         if (mState==State_Preloaded)
             return std::binary_search (mIds.begin(), mIds.end(), id);
 
-        return searchConst (id).isEmpty();
+        return !searchConst (id).isEmpty();
     }
 
     template <typename PtrType>
@@ -641,6 +645,7 @@ namespace MWWorld
 
     Ptr CellStore::search (const std::string& id)
     {
+        std::lock_guard<std::recursive_mutex> lock(*mMutex);
         SearchVisitor<MWWorld::Ptr> searchVisitor;
         searchVisitor.mIdToFind = &id;
         forEach(searchVisitor);
@@ -649,6 +654,7 @@ namespace MWWorld
 
     ConstPtr CellStore::searchConst (const std::string& id) const
     {
+        std::lock_guard<std::recursive_mutex> lock(*mMutex);
         SearchVisitor<MWWorld::ConstPtr> searchVisitor;
         searchVisitor.mIdToFind = &id;
         forEachConst(searchVisitor);
@@ -842,6 +848,7 @@ namespace MWWorld
 
     void CellStore::load ()
     {
+        std::lock_guard<std::recursive_mutex> lock(*mMutex);
         if (mState!=State_Loaded)
         {
             if (mState==State_Preloaded)
@@ -855,6 +862,7 @@ namespace MWWorld
 
     void CellStore::preload ()
     {
+        std::lock_guard<std::recursive_mutex> lock(*mMutex);
         if (mState==State_Unloaded)
         {
             listRefs ();

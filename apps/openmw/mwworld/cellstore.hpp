@@ -7,6 +7,8 @@
 #include <typeinfo>
 #include <map>
 #include <memory>
+#include <mutex>
+#include <vector>
 
 #include "livecellref.hpp"
 #include "cellreflist.hpp"
@@ -102,7 +104,9 @@ namespace MWWorld
             typedef std::map<LiveCellRefBase*, MWWorld::CellStore*> MovedRefTracker;
             // References owned by a different cell that have been moved here.
             // <reference, cell the reference originally came from>
+            mutable std::unique_ptr<std::recursive_mutex> mMutex;
             MovedRefTracker mMovedHere;
+
             // References owned by this cell that have been moved to another cell.
             // <reference, cell the reference was moved to>
             MovedRefTracker mMovedToAnotherCell;
