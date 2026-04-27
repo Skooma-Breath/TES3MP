@@ -8,6 +8,7 @@
 #include <map>
 #include <memory>
 #include <mutex>
+#include <shared_mutex>
 #include <vector>
 
 #include "livecellref.hpp"
@@ -104,7 +105,7 @@ namespace MWWorld
             typedef std::map<LiveCellRefBase*, MWWorld::CellStore*> MovedRefTracker;
             // References owned by a different cell that have been moved here.
             // <reference, cell the reference originally came from>
-            mutable std::unique_ptr<std::recursive_mutex> mMutex;
+            mutable std::unique_ptr<std::shared_mutex> mMutex;
             MovedRefTracker mMovedHere;
 
             // References owned by this cell that have been moved to another cell.
@@ -122,6 +123,9 @@ namespace MWWorld
 
             /// Repopulate mMergedRefs.
             void updateMergedRefs();
+
+            /// Non-locking implementation of searchConst. Caller must hold mMutex.
+            ConstPtr searchConstImpl(const std::string& id) const;
 
             // (item, max charge)
             typedef std::vector<std::pair<LiveCellRefBase*, float> > TRechargingItems;

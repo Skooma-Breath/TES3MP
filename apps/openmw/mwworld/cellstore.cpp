@@ -314,7 +314,7 @@ namespace MWWorld
         if (mState != State_Loaded)
             throw std::runtime_error("moveTo: can't move object from a non-loaded cell (how did you get this object anyway?)");
 
-        // Check natively present refs AND refs already tracked in mMovedToAnotherCell —
+        // Check natively present refs AND refs already tracked in mMovedToAnotherCell --
         // both physically live in this cell's typed lists, but the latter are invisible
         // to searchViaRefNum because MergeVisitor skips them.
         MovedRefTracker::iterator alreadyMoved = mMovedToAnotherCell.find(object.getBase());
@@ -379,7 +379,7 @@ namespace MWWorld
 
         if (alreadyMoved != mMovedToAnotherCell.end())
         {
-            // Ref was already moved to a previous destination — retarget in place.
+            // Ref was already moved to a previous destination -- retarget in place.
             CellStore* oldDest = alreadyMoved->second;
             oldDest->mMovedHere.erase(object.getBase());
             alreadyMoved->second = cellToMoveTo;
@@ -403,7 +403,7 @@ namespace MWWorld
     */
     bool CellStore::clearMovesToCells()
     {
-        std::lock_guard<std::recursive_mutex> lock(*mMutex);
+        std::unique_lock<std::shared_mutex> lock(*mMutex);
         MWBase::World* world = MWBase::Environment::get().getWorld();
         mwmp::CellController* cellController = mwmp::Main::get().getCellController();
 
@@ -416,7 +416,7 @@ namespace MWWorld
         // Actors that physically live in this cell but walked into another cell
         // have their Ptr keyed in subsystems as {mRef = our list node, mCell = destCell}.
         // drop(thisCell) won't find them. Delete them now before our lists are freed.
-        // Snapshot first — deleteObject can fire callbacks that modify mMovedToAnotherCell.
+        // Snapshot first -- deleteObject can fire callbacks that modify mMovedToAnotherCell.
         const auto movedToAnother = mMovedToAnotherCell; // copy
 
         for (const auto& pair : movedToAnother)
@@ -445,7 +445,7 @@ namespace MWWorld
         }
 
         // Patch the other side of mMovedHere tracking for refs that moved INTO this cell.
-        // Also rebuild mMergedRefs on the origin cell — it has a mMovedToAnotherCell entry
+        // Also rebuild mMergedRefs on the origin cell -- it has a mMovedToAnotherCell entry
         // pointing at our ref, and we're about to free our storage, so its mMergedRefs
         // would contain a dangling pointer if we don't rebuild it now.
         for (auto& reference : mMovedHere)
@@ -456,7 +456,7 @@ namespace MWWorld
         }
 
         // Patch the other side of mMovedToAnotherCell tracking.
-        // Rebuild mMergedRefs on the destination cell — it has a mMovedHere entry for
+        // Rebuild mMergedRefs on the destination cell -- it has a mMovedHere entry for
         // this ref (physically in our lists), and after we free our storage those
         // pointers in its mMergedRefs would dangle.
         for (auto& reference : mMovedToAnotherCell)
@@ -491,7 +491,7 @@ namespace MWWorld
 
     void CellStore::evictMovedRef(MWWorld::LiveCellRefBase* ref)
     {
-        // Case 1: this cell is the logical destination — ref physically lives in nativeCell
+        // Case 1: this cell is the logical destination -- ref physically lives in nativeCell
         // but mMovedHere[ref] = nativeCell here.
         auto it = mMovedHere.find(ref);
         if (it != mMovedHere.end())
@@ -503,7 +503,7 @@ namespace MWWorld
             updateMergedRefs();
             return;
         }
-        // Case 2: this cell is the native cell — ref physically lives here but
+        // Case 2: this cell is the native cell -- ref physically lives here but
         // mMovedToAnotherCell[ref] = destCell.
         auto it2 = mMovedToAnotherCell.find(ref);
         if (it2 != mMovedToAnotherCell.end())
@@ -552,7 +552,7 @@ namespace MWWorld
 
     void CellStore::updateMergedRefs()
     {
-        std::lock_guard<std::recursive_mutex> lock(*mMutex);
+        std::unique_lock<std::shared_mutex> lock(*mMutex);
         mMergedRefs.clear();
         mRechargingItemsUpToDate = false;
         MergeVisitor visitor(mMergedRefs, mMovedHere, mMovedToAnotherCell);
@@ -590,7 +590,7 @@ namespace MWWorld
 
     CellStore::CellStore (const ESM::Cell *cell, const MWWorld::ESMStore& esmStore, std::vector<ESM::ESMReader>& readerList)
         : mStore(esmStore), mReader(readerList), mCell (cell), mState (State_Unloaded), mHasState (false), mLastRespawn(0,0), mRechargingItemsUpToDate(false)
-        , mMutex(std::make_unique<std::recursive_mutex>())
+        , mMutex(std::make_unique<std::shared_mutex>())
     {
         mWaterLevel = cell->mWater;
     }
@@ -617,14 +617,14 @@ namespace MWWorld
 
     bool CellStore::hasId (const std::string& id) const
     {
-        std::lock_guard<std::recursive_mutex> lock(*mMutex);
+        std::shared_lock<std::shared_mutex> lock(*mMutex);
         if (mState==State_Unloaded)
             return false;
 
         if (mState==State_Preloaded)
             return std::binary_search (mIds.begin(), mIds.end(), id);
 
-        return !searchConst (id).isEmpty();
+        return !searchConstImpl (id).isEmpty();
     }
 
     template <typename PtrType>
@@ -645,7 +645,7 @@ namespace MWWorld
 
     Ptr CellStore::search (const std::string& id)
     {
-        std::lock_guard<std::recursive_mutex> lock(*mMutex);
+        std::unique_lock<std::shared_mutex> lock(*mMutex);
         SearchVisitor<MWWorld::Ptr> searchVisitor;
         searchVisitor.mIdToFind = &id;
         forEach(searchVisitor);
@@ -654,7 +654,12 @@ namespace MWWorld
 
     ConstPtr CellStore::searchConst (const std::string& id) const
     {
-        std::lock_guard<std::recursive_mutex> lock(*mMutex);
+        std::shared_lock<std::shared_mutex> lock(*mMutex);
+        return searchConstImpl(id);
+    }
+
+    ConstPtr CellStore::searchConstImpl (const std::string& id) const
+    {
         SearchVisitor<MWWorld::ConstPtr> searchVisitor;
         searchVisitor.mIdToFind = &id;
         forEachConst(searchVisitor);
@@ -848,7 +853,7 @@ namespace MWWorld
 
     void CellStore::load ()
     {
-        std::lock_guard<std::recursive_mutex> lock(*mMutex);
+        std::unique_lock<std::shared_mutex> lock(*mMutex);
         if (mState!=State_Loaded)
         {
             if (mState==State_Preloaded)
@@ -862,7 +867,7 @@ namespace MWWorld
 
     void CellStore::preload ()
     {
-        std::lock_guard<std::recursive_mutex> lock(*mMutex);
+        std::unique_lock<std::shared_mutex> lock(*mMutex);
         if (mState==State_Unloaded)
         {
             listRefs ();
