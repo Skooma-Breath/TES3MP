@@ -24,8 +24,9 @@ namespace mwmp
 
             if (worldstate.time.hour != -1)
             {
-                if (std::isfinite(worldstate.time.hour))
-                    world->setGlobalFloat("gamehour", worldstate.time.hour);
+                float hour = worldstate.time.hour;
+                if (std::isfinite(hour) && hour >= 0.f && hour < 24.f)
+                    world->setGlobalFloat("gamehour", hour);
                 else
                     LOG_APPEND(TimedLog::LOG_WARN, "Ignoring invalid world time hour %f", worldstate.time.hour);
             }

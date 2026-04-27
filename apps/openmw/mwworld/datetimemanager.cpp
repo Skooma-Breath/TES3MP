@@ -35,12 +35,15 @@ namespace MWWorld
 {
     void DateTimeManager::setup(Globals& globalVariables)
     {
-        mGameHour = globalVariables["gamehour"].getFloat();
         mDaysPassed = globalVariables["dayspassed"].getInteger();
+        if (mDaysPassed < 0)
+            mDaysPassed = 0;
         mDay = globalVariables["day"].getInteger();
         mMonth = globalVariables["month"].getInteger();
         mYear = globalVariables["year"].getInteger();
         mTimeScale = globalVariables["timescale"].getFloat();
+        // Route through setHour() to normalize gamehour into [0, 24) so getTimeStamp() never throws
+        setHour(globalVariables["gamehour"].getFloat());
     }
 
     void DateTimeManager::setHour(double hour)
