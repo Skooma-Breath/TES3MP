@@ -553,6 +553,11 @@ namespace MWWorld
     void CellStore::updateMergedRefs()
     {
         std::unique_lock<std::shared_mutex> lock(*mMutex);
+        updateMergedRefsImpl();
+    }
+
+    void CellStore::updateMergedRefsImpl()
+    {
         mMergedRefs.clear();
         mRechargingItemsUpToDate = false;
         MergeVisitor visitor(mMergedRefs, mMovedHere, mMovedToAnotherCell);
@@ -986,7 +991,7 @@ namespace MWWorld
             loadRef (ref, deleted, refNumToID);
         }
 
-        updateMergedRefs();
+        updateMergedRefsImpl();
     }
 
     bool CellStore::isExterior() const

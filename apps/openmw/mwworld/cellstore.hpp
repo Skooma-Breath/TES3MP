@@ -121,8 +121,11 @@ namespace MWWorld
             /// Moves object from the given cell to this cell.
             void moveFrom(const MWWorld::Ptr& object, MWWorld::CellStore* from);
 
-            /// Repopulate mMergedRefs.
+            /// Repopulate mMergedRefs (acquires unique_lock on mMutex).
             void updateMergedRefs();
+
+            /// Non-locking implementation of updateMergedRefs. Caller must already hold mMutex exclusively.
+            void updateMergedRefsImpl();
 
             /// Non-locking implementation of searchConst. Caller must hold mMutex.
             ConstPtr searchConstImpl(const std::string& id) const;
