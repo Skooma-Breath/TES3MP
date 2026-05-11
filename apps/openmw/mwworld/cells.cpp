@@ -110,11 +110,51 @@ void MWWorld::Cells::clear(const ESM::Cell& cell)
     {
         std::pair <int, int> cellCoordinates;
         cellCoordinates = std::make_pair(cell.getGridX(), cell.getGridY());
-        mExteriors.erase(cellCoordinates);
+
+        auto it = mExteriors.find(cellCoordinates);
+        if (it != mExteriors.end())
+        {
+            /*
+                Start of tes3mp addition
+
+                Invalidate any mIdCache entries pointing at this CellStore before
+                erasing it. The cache holds raw CellStore pointers; if a pointer
+                is left pointing at a destroyed CellStore, the next cache-hit in
+                getPtr() will attempt to lock the already-destroyed mutex and crash
+                with an access violation (0xC0000005).
+            */
+            CellStore* dyingStore = &it->second;
+            for (auto& entry : mIdCache)
+                if (entry.second == dyingStore)
+                    entry.second = nullptr;
+            /*
+                End of tes3mp addition
+            */
+
+            mExteriors.erase(it);
+        }
     }
-    else if (mInteriors.count(Misc::StringUtils::lowerCase(cell.mName)) > 0)
+    else
     {
-        mInteriors.erase(Misc::StringUtils::lowerCase(cell.mName));
+        std::string lowerName = Misc::StringUtils::lowerCase(cell.mName);
+        auto it = mInteriors.find(lowerName);
+        if (it != mInteriors.end())
+        {
+            /*
+                Start of tes3mp addition
+
+                Same cache invalidation as above, for interior cells.
+            */
+            CellStore* dyingStore = &it->second;
+            for (auto& entry : mIdCache)
+                if (entry.second == dyingStore)
+                    entry.second = nullptr;
+            /*
+                End of tes3mp addition
+            */
+
+            mInteriors.erase(it);
+        }
     }
 }
 /*
