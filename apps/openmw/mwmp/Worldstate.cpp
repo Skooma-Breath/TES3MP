@@ -506,7 +506,7 @@ void Worldstate::resetCells(std::vector<ESM::Cell>* cells)
                             dedicatedPlayer->deleteReference();
                             dedicatedPlayer->cell = *world->getInterior(RecordHelper::getPlaceholderInteriorCellName())->getCell();
                             dedicatedPlayer->createReference(dedicatedPlayer->npc.mId);
-                            if (dedicatedPlayer->ptr.getTypeName() == typeid(ESM::NPC).name())
+                            if (dedicatedPlayer->getPtr().getTypeName() == typeid(ESM::NPC).name())
                                 dedicatedPlayer->setEquipment();
                         }
                     }
@@ -557,12 +557,12 @@ void Worldstate::resetCells(std::vector<ESM::Cell>* cells)
                 dedicatedPlayer->deleteReference();
                 dedicatedPlayer->cell = cell;
                 dedicatedPlayer->createReference(dedicatedPlayer->npc.mId);
-                if (dedicatedPlayer->ptr.getTypeName() == typeid(ESM::NPC).name())
+                if (dedicatedPlayer->getPtr().getTypeName() == typeid(ESM::NPC).name())
                     dedicatedPlayer->setEquipment();
             }
         }
 
-        // Refresh players whose ref was physically owned by the reset cell but whose
+        // Refresh players whose ref was physically owned
         // ptr.mCell had already been updated to a different cell by a prior moveTo().
         // These were captured before clearCellStore wiped mMovedToAnotherCell.
         for (DedicatedPlayer* dedicatedPlayer : playersToRefresh)
@@ -579,13 +579,13 @@ void Worldstate::resetCells(std::vector<ESM::Cell>* cells)
                 dedicatedPlayer->deleteReference();
                 dedicatedPlayer->cell = cell;
                 dedicatedPlayer->createReference(dedicatedPlayer->npc.mId);
-                if (dedicatedPlayer->ptr.getTypeName() == typeid(ESM::NPC).name())
+                if (dedicatedPlayer->getPtr().getTypeName() == typeid(ESM::NPC).name())
                     dedicatedPlayer->setEquipment();
             }
         }
     }
 
-    // Move the local player from their temporary holding cell back to their previous cell
+    // Move the local player
     if (haveUnloadedActiveCells)
     {
         if (playerCell.isExterior())
