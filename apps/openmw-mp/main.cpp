@@ -310,7 +310,7 @@ int main(int argc, char *argv[])
     {
         LOG_MESSAGE_SIMPLE(TimedLog::LOG_ERROR, e.what());
         Script::Call<Script::CallbackIdentity("OnServerScriptCrash")>(e.what());
-        throw; //fall through
+        code = 1;
     }
 
     RakNet::RakPeerInterface::DestroyInstance(peer);

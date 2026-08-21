@@ -30,17 +30,26 @@ void ActorPacket::Packet(RakNet::BitStream *newBitstream, bool send)
     if (!PacketHeader(newBitstream, send))
         return;
 
-    BaseActor actor;
-
     for (unsigned int i = 0; i < actorList->count; i++)
     {
+        BaseActor actor{};
+
         if (send)
             actor = actorList->baseActors.at(i);
 
-        RW(actor.refNum, send);
-        RW(actor.mpNum, send);
+        if (!RW(actor.refNum, send) || !RW(actor.mpNum, send))
+        {
+            actorList->isValid = false;
+            return;
+        }
 
         Actor(actor, send);
+
+        if (!packetValid)
+        {
+            actorList->isValid = false;
+            return;
+        }
 
         if (!send)
             actorList->baseActors.push_back(actor);
@@ -51,15 +60,22 @@ bool ActorPacket::PacketHeader(RakNet::BitStream *newBitstream, bool send)
 {
     BasePacket::Packet(newBitstream, send);
 
-    RW(actorList->cell.mData, send, true);
-    RW(actorList->cell.mName, send, true);
+    if (!RW(actorList->cell.mData, send, true) || !RW(actorList->cell.mName, send, true))
+    {
+        actorList->isValid = false;
+        return false;
+    }
 
     if (send)
         actorList->count = (unsigned int)(actorList->baseActors.size());
     else
         actorList->baseActors.clear();
 
-    RW(actorList->count, send);
+    if (!RW(actorList->count, send))
+    {
+        actorList->isValid = false;
+        return false;
+    }
 
     if (actorList->count > maxActors)
     {

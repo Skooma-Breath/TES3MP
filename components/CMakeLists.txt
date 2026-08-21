@@ -111,8 +111,14 @@ add_component_dir (misc
     )
 
 add_component_dir (debug
-    debugging debuglog gldebug
+    debugging debuglog
     )
+
+IF (BUILD_OPENMW OR BUILD_OPENCS)
+    add_component_dir (debug
+        gldebug
+        )
+ENDIF()
 
 IF(NOT WIN32 AND NOT APPLE)
     add_definitions(-DGLOBAL_DATA_PATH="${GLOBAL_DATA_PATH}")

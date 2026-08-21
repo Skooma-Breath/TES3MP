@@ -1,6 +1,9 @@
 #include "PlayerProcessor.hpp"
 #include "Networking.hpp"
 
+#include <components/openmw-mp/TimedLog.hpp>
+#include <exception>
+
 using namespace mwmp;
 
 template<class T>
@@ -17,7 +20,34 @@ bool PlayerProcessor::Process(RakNet::Packet &packet) noexcept
             myPacket->setPlayer(player);
 
             if (!processor.second->avoidReading)
-                myPacket->Read();
+            {
+                try
+                {
+                    myPacket->Read();
+                }
+                catch (const std::exception &e)
+                {
+                    LOG_MESSAGE_SIMPLE(TimedLog::LOG_ERROR, "Exception while parsing %s: %s",
+                        processor.second->strPacketID.c_str(), e.what());
+                    Networking::getPtr()->kickPlayer(packet.guid, false);
+                    return true;
+                }
+                catch (...)
+                {
+                    LOG_MESSAGE_SIMPLE(TimedLog::LOG_ERROR, "Unknown exception while parsing %s",
+                        processor.second->strPacketID.c_str());
+                    Networking::getPtr()->kickPlayer(packet.guid, false);
+                    return true;
+                }
+            }
+
+            if (!processor.second->avoidReading && !myPacket->isPacketValid())
+            {
+                LOG_MESSAGE_SIMPLE(TimedLog::LOG_ERROR, "Received invalid %s; disconnecting sender",
+                    processor.second->strPacketID.c_str());
+                Networking::getPtr()->kickPlayer(packet.guid, false);
+                return true;
+            }
 
             processor.second->Do(*myPacket, *player);
             return true;

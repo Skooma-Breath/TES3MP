@@ -26,7 +26,8 @@ void PacketPlayerStatsDynamic::Packet(RakNet::BitStream *newBitstream, bool send
         if (send)
             count = static_cast<uint32_t>(player->statsDynamicIndexChanges.size());
 
-        RW(count, send);
+        if (!RWCount(count, send, 3))
+            return;
 
         if (!send)
         {

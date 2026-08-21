@@ -17,7 +17,8 @@ void PacketPlayerBook::Packet(RakNet::BitStream *newBitstream, bool send)
     if (send)
         count = static_cast<uint32_t>(player->bookChanges.size());
 
-    RW(count, send);
+    if (!RWCount(count, send, 16384))
+        return;
 
     if (!send)
     {

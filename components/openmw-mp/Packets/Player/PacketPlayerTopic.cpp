@@ -17,7 +17,8 @@ void PacketPlayerTopic::Packet(RakNet::BitStream *newBitstream, bool send)
     if (send)
         count = static_cast<uint32_t>(player->topicChanges.size());
 
-    RW(count, send);
+    if (!RWCount(count, send, 16384))
+        return;
 
     if (!send)
     {

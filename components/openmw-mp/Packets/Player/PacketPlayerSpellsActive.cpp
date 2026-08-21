@@ -19,7 +19,8 @@ void PacketPlayerSpellsActive::Packet(RakNet::BitStream *newBitstream, bool send
     if (send)
         count = static_cast<uint32_t>(player->spellsActiveChanges.activeSpells.size());
 
-    RW(count, send);
+    if (!RWCount(count, send, 4096))
+        return;
 
     if (!send)
     {
@@ -53,12 +54,8 @@ void PacketPlayerSpellsActive::Packet(RakNet::BitStream *newBitstream, bool send
         if (send)
             effectCount = static_cast<uint32_t>(activeSpell.params.mEffects.size());
 
-        RW(effectCount, send);
-
-        if (effectCount > maxEffects)
-        {
+        if (!RWCount(effectCount, send, maxEffects))
             return;
-        }
 
         if (!send)
         {

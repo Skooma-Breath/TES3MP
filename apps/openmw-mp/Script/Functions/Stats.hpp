@@ -2,84 +2,84 @@
 #define OPENMW_STATAPI_HPP
 
 #define STATAPI \
-    {"GetAttributeCount",       StatsFunctions::GetAttributeCount},\
-    {"GetSkillCount",           StatsFunctions::GetSkillCount},\
-    {"GetAttributeId",          StatsFunctions::GetAttributeId},\
-    {"GetSkillId",              StatsFunctions::GetSkillId},\
-    {"GetAttributeName",        StatsFunctions::GetAttributeName},\
-    {"GetSkillName",            StatsFunctions::GetSkillName},\
+    SCRIPT_FUNCTION("GetAttributeCount", StatsFunctions::GetAttributeCount),\
+    SCRIPT_FUNCTION("GetSkillCount", StatsFunctions::GetSkillCount),\
+    SCRIPT_FUNCTION("GetAttributeId", StatsFunctions::GetAttributeId),\
+    SCRIPT_FUNCTION("GetSkillId", StatsFunctions::GetSkillId),\
+    SCRIPT_FUNCTION("GetAttributeName", StatsFunctions::GetAttributeName),\
+    SCRIPT_FUNCTION("GetSkillName", StatsFunctions::GetSkillName),\
     \
-    {"GetName",                 StatsFunctions::GetName},\
-    {"GetRace",                 StatsFunctions::GetRace},\
-    {"GetHead",                 StatsFunctions::GetHead},\
-    {"GetHair",                 StatsFunctions::GetHairstyle},\
-    {"GetIsMale",               StatsFunctions::GetIsMale},\
-    {"GetModel",                StatsFunctions::GetModel},\
-    {"GetBirthsign",            StatsFunctions::GetBirthsign},\
+    SCRIPT_FUNCTION("GetName", StatsFunctions::GetName),\
+    SCRIPT_FUNCTION("GetRace", StatsFunctions::GetRace),\
+    SCRIPT_FUNCTION("GetHead", StatsFunctions::GetHead),\
+    SCRIPT_FUNCTION("GetHair", StatsFunctions::GetHairstyle),\
+    SCRIPT_FUNCTION("GetIsMale", StatsFunctions::GetIsMale),\
+    SCRIPT_FUNCTION("GetModel", StatsFunctions::GetModel),\
+    SCRIPT_FUNCTION("GetBirthsign", StatsFunctions::GetBirthsign),\
     \
-    {"GetLevel",                StatsFunctions::GetLevel},\
-    {"GetLevelProgress",        StatsFunctions::GetLevelProgress},\
+    SCRIPT_FUNCTION("GetLevel", StatsFunctions::GetLevel),\
+    SCRIPT_FUNCTION("GetLevelProgress", StatsFunctions::GetLevelProgress),\
     \
-    {"GetHealthBase",           StatsFunctions::GetHealthBase},\
-    {"GetHealthCurrent",        StatsFunctions::GetHealthCurrent},\
+    SCRIPT_FUNCTION("GetHealthBase", StatsFunctions::GetHealthBase),\
+    SCRIPT_FUNCTION("GetHealthCurrent", StatsFunctions::GetHealthCurrent),\
     \
-    {"GetMagickaBase",          StatsFunctions::GetMagickaBase},\
-    {"GetMagickaCurrent",       StatsFunctions::GetMagickaCurrent},\
+    SCRIPT_FUNCTION("GetMagickaBase", StatsFunctions::GetMagickaBase),\
+    SCRIPT_FUNCTION("GetMagickaCurrent", StatsFunctions::GetMagickaCurrent),\
     \
-    {"GetFatigueBase",          StatsFunctions::GetFatigueBase},\
-    {"GetFatigueCurrent",       StatsFunctions::GetFatigueCurrent},\
+    SCRIPT_FUNCTION("GetFatigueBase", StatsFunctions::GetFatigueBase),\
+    SCRIPT_FUNCTION("GetFatigueCurrent", StatsFunctions::GetFatigueCurrent),\
     \
-    {"GetAttributeBase",        StatsFunctions::GetAttributeBase},\
-    {"GetAttributeModifier",    StatsFunctions::GetAttributeModifier},\
-    {"GetAttributeDamage",      StatsFunctions::GetAttributeDamage},\
+    SCRIPT_FUNCTION("GetAttributeBase", StatsFunctions::GetAttributeBase),\
+    SCRIPT_FUNCTION("GetAttributeModifier", StatsFunctions::GetAttributeModifier),\
+    SCRIPT_FUNCTION("GetAttributeDamage", StatsFunctions::GetAttributeDamage),\
     \
-    {"GetSkillBase",            StatsFunctions::GetSkillBase},\
-    {"GetSkillModifier",        StatsFunctions::GetSkillModifier},\
-    {"GetSkillDamage",          StatsFunctions::GetSkillDamage},\
-    {"GetSkillProgress",        StatsFunctions::GetSkillProgress},\
-    {"GetSkillIncrease",        StatsFunctions::GetSkillIncrease},\
+    SCRIPT_FUNCTION("GetSkillBase", StatsFunctions::GetSkillBase),\
+    SCRIPT_FUNCTION("GetSkillModifier", StatsFunctions::GetSkillModifier),\
+    SCRIPT_FUNCTION("GetSkillDamage", StatsFunctions::GetSkillDamage),\
+    SCRIPT_FUNCTION("GetSkillProgress", StatsFunctions::GetSkillProgress),\
+    SCRIPT_FUNCTION("GetSkillIncrease", StatsFunctions::GetSkillIncrease),\
     \
-    {"GetBounty",               StatsFunctions::GetBounty},\
+    SCRIPT_FUNCTION("GetBounty", StatsFunctions::GetBounty),\
     \
-    {"SetName",                 StatsFunctions::SetName},\
-    {"SetRace",                 StatsFunctions::SetRace},\
-    {"SetHead",                 StatsFunctions::SetHead},\
-    {"SetHair",                 StatsFunctions::SetHairstyle},\
-    {"SetIsMale",               StatsFunctions::SetIsMale},\
-    {"SetModel",                StatsFunctions::SetModel},\
-    {"SetBirthsign",            StatsFunctions::SetBirthsign},\
-    {"SetResetStats",           StatsFunctions::SetResetStats},\
+    SCRIPT_FUNCTION("SetName", StatsFunctions::SetName),\
+    SCRIPT_FUNCTION("SetRace", StatsFunctions::SetRace),\
+    SCRIPT_FUNCTION("SetHead", StatsFunctions::SetHead),\
+    SCRIPT_FUNCTION("SetHair", StatsFunctions::SetHairstyle),\
+    SCRIPT_FUNCTION("SetIsMale", StatsFunctions::SetIsMale),\
+    SCRIPT_FUNCTION("SetModel", StatsFunctions::SetModel),\
+    SCRIPT_FUNCTION("SetBirthsign", StatsFunctions::SetBirthsign),\
+    SCRIPT_FUNCTION("SetResetStats", StatsFunctions::SetResetStats),\
     \
-    {"SetLevel",                StatsFunctions::SetLevel},\
-    {"SetLevelProgress",        StatsFunctions::SetLevelProgress},\
+    SCRIPT_FUNCTION("SetLevel", StatsFunctions::SetLevel),\
+    SCRIPT_FUNCTION("SetLevelProgress", StatsFunctions::SetLevelProgress),\
     \
-    {"SetHealthBase",           StatsFunctions::SetHealthBase},\
-    {"SetHealthCurrent",        StatsFunctions::SetHealthCurrent},\
-    {"SetMagickaBase",          StatsFunctions::SetMagickaBase},\
-    {"SetMagickaCurrent",       StatsFunctions::SetMagickaCurrent},\
-    {"SetFatigueBase",          StatsFunctions::SetFatigueBase},\
-    {"SetFatigueCurrent",       StatsFunctions::SetFatigueCurrent},\
+    SCRIPT_FUNCTION("SetHealthBase", StatsFunctions::SetHealthBase),\
+    SCRIPT_FUNCTION("SetHealthCurrent", StatsFunctions::SetHealthCurrent),\
+    SCRIPT_FUNCTION("SetMagickaBase", StatsFunctions::SetMagickaBase),\
+    SCRIPT_FUNCTION("SetMagickaCurrent", StatsFunctions::SetMagickaCurrent),\
+    SCRIPT_FUNCTION("SetFatigueBase", StatsFunctions::SetFatigueBase),\
+    SCRIPT_FUNCTION("SetFatigueCurrent", StatsFunctions::SetFatigueCurrent),\
     \
-    {"SetAttributeBase",        StatsFunctions::SetAttributeBase},\
-    {"ClearAttributeModifier",  StatsFunctions::ClearAttributeModifier},\
-    {"SetAttributeDamage",      StatsFunctions::SetAttributeDamage},\
+    SCRIPT_FUNCTION("SetAttributeBase", StatsFunctions::SetAttributeBase),\
+    SCRIPT_FUNCTION("ClearAttributeModifier", StatsFunctions::ClearAttributeModifier),\
+    SCRIPT_FUNCTION("SetAttributeDamage", StatsFunctions::SetAttributeDamage),\
     \
-    {"SetSkillBase",            StatsFunctions::SetSkillBase},\
-    {"ClearSkillModifier",      StatsFunctions::ClearSkillModifier},\
-    {"SetSkillDamage",          StatsFunctions::SetSkillDamage},\
-    {"SetSkillProgress",        StatsFunctions::SetSkillProgress},\
-    {"SetSkillIncrease",        StatsFunctions::SetSkillIncrease},\
+    SCRIPT_FUNCTION("SetSkillBase", StatsFunctions::SetSkillBase),\
+    SCRIPT_FUNCTION("ClearSkillModifier", StatsFunctions::ClearSkillModifier),\
+    SCRIPT_FUNCTION("SetSkillDamage", StatsFunctions::SetSkillDamage),\
+    SCRIPT_FUNCTION("SetSkillProgress", StatsFunctions::SetSkillProgress),\
+    SCRIPT_FUNCTION("SetSkillIncrease", StatsFunctions::SetSkillIncrease),\
     \
-    {"SetBounty",               StatsFunctions::SetBounty},\
-    {"SetCharGenStage",         StatsFunctions::SetCharGenStage},\
+    SCRIPT_FUNCTION("SetBounty", StatsFunctions::SetBounty),\
+    SCRIPT_FUNCTION("SetCharGenStage", StatsFunctions::SetCharGenStage),\
     \
-    {"SendBaseInfo",            StatsFunctions::SendBaseInfo},\
+    SCRIPT_FUNCTION("SendBaseInfo", StatsFunctions::SendBaseInfo),\
     \
-    {"SendStatsDynamic",        StatsFunctions::SendStatsDynamic},\
-    {"SendAttributes",          StatsFunctions::SendAttributes},\
-    {"SendSkills",              StatsFunctions::SendSkills},\
-    {"SendLevel",               StatsFunctions::SendLevel},\
-    {"SendBounty",              StatsFunctions::SendBounty}
+    SCRIPT_FUNCTION("SendStatsDynamic", StatsFunctions::SendStatsDynamic),\
+    SCRIPT_FUNCTION("SendAttributes", StatsFunctions::SendAttributes),\
+    SCRIPT_FUNCTION("SendSkills", StatsFunctions::SendSkills),\
+    SCRIPT_FUNCTION("SendLevel", StatsFunctions::SendLevel),\
+    SCRIPT_FUNCTION("SendBounty", StatsFunctions::SendBounty)
 
 class StatsFunctions
 {

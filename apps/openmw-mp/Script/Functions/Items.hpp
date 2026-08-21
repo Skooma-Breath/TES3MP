@@ -2,46 +2,46 @@
 #define OPENMW_ITEMAPI_HPP
 
 #define ITEMAPI \
-    {"ClearInventoryChanges",                 ItemFunctions::ClearInventoryChanges},\
+    SCRIPT_FUNCTION("ClearInventoryChanges", ItemFunctions::ClearInventoryChanges),\
     \
-    {"GetEquipmentSize",                      ItemFunctions::GetEquipmentSize},\
-    {"GetEquipmentChangesSize",               ItemFunctions::GetEquipmentChangesSize},\
-    {"GetInventoryChangesSize",               ItemFunctions::GetInventoryChangesSize},\
-    {"GetInventoryChangesAction",             ItemFunctions::GetInventoryChangesAction},\
+    SCRIPT_FUNCTION("GetEquipmentSize", ItemFunctions::GetEquipmentSize),\
+    SCRIPT_FUNCTION("GetEquipmentChangesSize", ItemFunctions::GetEquipmentChangesSize),\
+    SCRIPT_FUNCTION("GetInventoryChangesSize", ItemFunctions::GetInventoryChangesSize),\
+    SCRIPT_FUNCTION("GetInventoryChangesAction", ItemFunctions::GetInventoryChangesAction),\
     \
-    {"SetInventoryChangesAction",             ItemFunctions::SetInventoryChangesAction},\
+    SCRIPT_FUNCTION("SetInventoryChangesAction", ItemFunctions::SetInventoryChangesAction),\
     \
-    {"EquipItem",                             ItemFunctions::EquipItem},\
-    {"UnequipItem",                           ItemFunctions::UnequipItem},\
+    SCRIPT_FUNCTION("EquipItem", ItemFunctions::EquipItem),\
+    SCRIPT_FUNCTION("UnequipItem", ItemFunctions::UnequipItem),\
     \
-    {"AddItemChange",                         ItemFunctions::AddItemChange},\
+    SCRIPT_FUNCTION("AddItemChange", ItemFunctions::AddItemChange),\
     \
-    {"HasItemEquipped",                       ItemFunctions::HasItemEquipped},\
+    SCRIPT_FUNCTION("HasItemEquipped", ItemFunctions::HasItemEquipped),\
     \
-    {"GetEquipmentChangesSlot",                ItemFunctions::GetEquipmentChangesSlot},\
-    {"GetEquipmentItemRefId",                 ItemFunctions::GetEquipmentItemRefId},\
-    {"GetEquipmentItemCount",                 ItemFunctions::GetEquipmentItemCount},\
-    {"GetEquipmentItemCharge",                ItemFunctions::GetEquipmentItemCharge},\
-    {"GetEquipmentItemEnchantmentCharge",     ItemFunctions::GetEquipmentItemEnchantmentCharge},\
+    SCRIPT_FUNCTION("GetEquipmentChangesSlot", ItemFunctions::GetEquipmentChangesSlot),\
+    SCRIPT_FUNCTION("GetEquipmentItemRefId", ItemFunctions::GetEquipmentItemRefId),\
+    SCRIPT_FUNCTION("GetEquipmentItemCount", ItemFunctions::GetEquipmentItemCount),\
+    SCRIPT_FUNCTION("GetEquipmentItemCharge", ItemFunctions::GetEquipmentItemCharge),\
+    SCRIPT_FUNCTION("GetEquipmentItemEnchantmentCharge", ItemFunctions::GetEquipmentItemEnchantmentCharge),\
     \
-    {"GetInventoryItemRefId",                 ItemFunctions::GetInventoryItemRefId},\
-    {"GetInventoryItemCount",                 ItemFunctions::GetInventoryItemCount},\
-    {"GetInventoryItemCharge",                ItemFunctions::GetInventoryItemCharge},\
-    {"GetInventoryItemEnchantmentCharge",     ItemFunctions::GetInventoryItemEnchantmentCharge},\
-    {"GetInventoryItemSoul",                  ItemFunctions::GetInventoryItemSoul},\
+    SCRIPT_FUNCTION("GetInventoryItemRefId", ItemFunctions::GetInventoryItemRefId),\
+    SCRIPT_FUNCTION("GetInventoryItemCount", ItemFunctions::GetInventoryItemCount),\
+    SCRIPT_FUNCTION("GetInventoryItemCharge", ItemFunctions::GetInventoryItemCharge),\
+    SCRIPT_FUNCTION("GetInventoryItemEnchantmentCharge", ItemFunctions::GetInventoryItemEnchantmentCharge),\
+    SCRIPT_FUNCTION("GetInventoryItemSoul", ItemFunctions::GetInventoryItemSoul),\
     \
-    {"GetUsedItemRefId",                      ItemFunctions::GetUsedItemRefId},\
-    {"GetUsedItemCount",                      ItemFunctions::GetUsedItemCount},\
-    {"GetUsedItemCharge",                     ItemFunctions::GetUsedItemCharge},\
-    {"GetUsedItemEnchantmentCharge",          ItemFunctions::GetUsedItemEnchantmentCharge},\
-    {"GetUsedItemSoul",                       ItemFunctions::GetUsedItemSoul},\
+    SCRIPT_FUNCTION("GetUsedItemRefId", ItemFunctions::GetUsedItemRefId),\
+    SCRIPT_FUNCTION("GetUsedItemCount", ItemFunctions::GetUsedItemCount),\
+    SCRIPT_FUNCTION("GetUsedItemCharge", ItemFunctions::GetUsedItemCharge),\
+    SCRIPT_FUNCTION("GetUsedItemEnchantmentCharge", ItemFunctions::GetUsedItemEnchantmentCharge),\
+    SCRIPT_FUNCTION("GetUsedItemSoul", ItemFunctions::GetUsedItemSoul),\
     \
-    {"SendEquipment",                         ItemFunctions::SendEquipment},\
-    {"SendInventoryChanges",                  ItemFunctions::SendInventoryChanges},\
-    {"SendItemUse",                           ItemFunctions::SendItemUse},\
+    SCRIPT_FUNCTION("SendEquipment", ItemFunctions::SendEquipment),\
+    SCRIPT_FUNCTION("SendInventoryChanges", ItemFunctions::SendInventoryChanges),\
+    SCRIPT_FUNCTION("SendItemUse", ItemFunctions::SendItemUse),\
     \
-    {"InitializeInventoryChanges",            ItemFunctions::InitializeInventoryChanges},\
-    {"AddItem",                               ItemFunctions::AddItem}
+    SCRIPT_FUNCTION("InitializeInventoryChanges", ItemFunctions::InitializeInventoryChanges),\
+    SCRIPT_FUNCTION("AddItem", ItemFunctions::AddItem)
 
 class ItemFunctions
 {

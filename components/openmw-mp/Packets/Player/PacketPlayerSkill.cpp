@@ -27,7 +27,8 @@ void PacketPlayerSkill::Packet(RakNet::BitStream *newBitstream, bool send)
         if (send)
             count = static_cast<uint32_t>(player->skillIndexChanges.size());
 
-        RW(count, send);
+        if (!RWCount(count, send, 27))
+            return;
 
         if (!send)
         {

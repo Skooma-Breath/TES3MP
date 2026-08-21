@@ -21,7 +21,9 @@
 
 namespace bfs = boost::filesystem;
 
+#ifndef OPENMW_SERVER_BUILD
 #include <SDL_messagebox.h>
+#endif
 
 #ifdef __linux__
 #include <sys/prctl.h>
@@ -418,11 +420,13 @@ static void crash_handler(const char *logfile)
     // even faulty applications shouldn't be able to freeze the X server.
     usleep(100000);
 
+#ifndef OPENMW_SERVER_BUILD
     if(logfile)
     {
         std::string message = "OpenMW has encountered a fatal error.\nCrash log saved to '" + std::string(logfile) + "'.\n Please report this to https://gitlab.com/OpenMW/openmw/issues !";
         SDL_ShowSimpleMessageBox(0, "Fatal Error", message.c_str(), nullptr);
     }
+#endif
 
     exit(0);
 }

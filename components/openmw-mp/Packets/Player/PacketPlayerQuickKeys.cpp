@@ -17,7 +17,8 @@ void PacketPlayerQuickKeys::Packet(RakNet::BitStream *newBitstream, bool send)
     if (send)
         count = static_cast<uint32_t>(player->quickKeyChanges.size());
 
-    RW(count, send);
+    if (!RWCount(count, send, 10))
+        return;
 
     if (!send)
     {

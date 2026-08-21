@@ -4,6 +4,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <cstdarg>
 #include <type_traits>
 #include <RakNetTypes.h>
 #include "Utils.hpp"
@@ -35,6 +36,9 @@ template<> struct TypeChar<double, sizeof(double)> { enum { value = 'f' }; };
 template<> struct TypeChar<char*, sizeof(char*)> { enum { value = 's' }; };
 template<> struct TypeChar<const char*, sizeof(const char*)> { enum { value = 's' }; };
 template<> struct TypeChar<void, sizeof_void<void>::value> { enum { value = 'v' }; };
+#if defined(__arm__) || defined(__aarch64__)
+template<> struct TypeChar<va_list, sizeof(va_list)> { enum { value = 'a' }; };
+#endif
 
 template<const char t> struct CharType { static_assert(!t, "Unsupported type in variadic type list"); };
 template<> struct CharType<'b'> { typedef bool type; };
@@ -48,6 +52,9 @@ template<> struct CharType<'l'> { typedef unsigned long long type; };
 template<> struct CharType<'f'> { typedef double type; };
 template<> struct CharType<'s'> { typedef const char* type; };
 template<> struct CharType<'v'> { typedef void type; };
+#if defined(__arm__) || defined(__aarch64__)
+template<> struct CharType<'a'> { typedef va_list type; };
+#endif
 
 template<typename... Types>
 struct TypeString {
@@ -98,14 +105,28 @@ struct CallbackIdentity
 
 struct ScriptFunctionPointer : public ScriptIdentity
 {
-    void *addr;
+    using AddressResolver = void* (*)();
+
+    AddressResolver addressResolver;
+
+    template<auto FunctionAddress>
+    static void* ResolveAddress()
+    {
 #if (!defined(__clang__) && defined(__GNUC__))
-    template<typename R, typename... Types>
-    constexpr ScriptFunctionPointer(Function<R, Types...> addr) : ScriptIdentity(addr), addr((void*)(addr)) {}
+        return (void*)(FunctionAddress);
 #else
-    template<typename R, typename... Types>
-    constexpr ScriptFunctionPointer(Function<R, Types...> addr) : ScriptIdentity(addr), addr(addr) {}
+        return reinterpret_cast<void*>(FunctionAddress);
 #endif
+    }
+
+    template<typename R, typename... Types>
+    constexpr ScriptFunctionPointer(Function<R, Types...> addr, AddressResolver resolver)
+        : ScriptIdentity(addr), addressResolver(resolver) {}
+
+    void* address() const
+    {
+        return addressResolver();
+    }
 };
 
 struct ScriptFunctionData
@@ -115,6 +136,15 @@ struct ScriptFunctionData
 
     constexpr ScriptFunctionData(const char* name, ScriptFunctionPointer func) : name(name), func(func) {}
 };
+
+template<auto FunctionAddress>
+constexpr ScriptFunctionData MakeScriptFunctionData(const char* name)
+{
+    return ScriptFunctionData(name, ScriptFunctionPointer(FunctionAddress,
+        &ScriptFunctionPointer::ResolveAddress<FunctionAddress>));
+}
+
+#define SCRIPT_FUNCTION(name, function) MakeScriptFunctionData<&function>(name)
 
 struct ScriptCallbackData
 {

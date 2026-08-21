@@ -6,7 +6,9 @@
 
 #include <components/files/configurationmanager.hpp>
 
+#ifndef OPENMW_SERVER_BUILD
 #include <SDL_messagebox.h>
+#endif
 
 #include "debuglog.hpp"
 

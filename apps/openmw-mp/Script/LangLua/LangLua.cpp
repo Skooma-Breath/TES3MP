@@ -78,7 +78,7 @@ struct LuaFunctionDispatcher<0, FunctionIndex> {
         // Retrieve function data
         constexpr ScriptFunctionData const& functionData = ScriptFunctions::functions[FunctionIndex];
         // Call the C++ function using reinterpret_cast
-        return reinterpret_cast<FunctionEllipsis<ReturnType>>(functionData.func.addr)(std::forward<Args>(args)...);
+        return reinterpret_cast<FunctionEllipsis<ReturnType>>(functionData.func.address())(std::forward<Args>(args)...);
     }
 };
 
@@ -126,11 +126,11 @@ template<std::size_t N>
 using IndicesFor = build_indices<N>;
 
 template<size_t... Indices>
-LuaFuctionData *functions(indices<Indices...>)
+LuaFunctionData *GetLuaFunctions(indices<Indices...>)
 {
 
-    static LuaFuctionData functions_[sizeof...(Indices)]{
-            F_<Indices>::F...
+    static LuaFunctionData functions_[sizeof...(Indices)]{
+            LuaFunctionDefinition<Indices>::FunctionInfo...
     };
 
     static_assert(

@@ -51,7 +51,12 @@ namespace mwmp
             if (write)
                 bs->Write(data, size);
             else
-                return bs->Read(data, size);
+            {
+                const bool result = bs->Read(data, size);
+                if (!result)
+                    packetValid = false;
+                return result;
+            }
             return true;
         }
 
@@ -68,10 +73,10 @@ namespace mwmp
             }
             else
             {
-                if (compress)
-                    return bs->ReadCompressed(data);
-                else
-                    return bs->Read(data);
+                const bool result = compress ? bs->ReadCompressed(data) : bs->Read(data);
+                if (!result)
+                    packetValid = false;
+                return result;
             }
         }
 
@@ -80,11 +85,31 @@ namespace mwmp
             if (write)
                 bs->Write(data);
             else
-                return bs->Read(data);
+            {
+                const bool result = bs->Read(data);
+                if (!result)
+                    packetValid = false;
+                return result;
+            }
             return true;
         }
 
         const static uint32_t maxStrSize = 64 * 1024; // 64 KiB
+        const static uint32_t maxCollectionSize = 16 * 1024;
+
+        bool RWCount(uint32_t &count, bool write, uint32_t maxCount = maxCollectionSize)
+        {
+            if (!RW(count, write))
+                return false;
+
+            if (!write && count > maxCount)
+            {
+                packetValid = false;
+                return false;
+            }
+
+            return true;
+        }
 
         bool RW(std::string &str, bool write, bool compress = false, std::string::size_type maxSize = maxStrSize)
         {
@@ -114,7 +139,10 @@ namespace mwmp
                     str = rstr.C_String();
                 }
                 else
+                {
+                    packetValid = false;
                     str = std::string();
+                }
             }
             return res;
         }

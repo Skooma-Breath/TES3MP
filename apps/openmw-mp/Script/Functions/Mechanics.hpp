@@ -4,44 +4,44 @@
 #include "../Types.hpp"
 
 #define MECHANICSAPI \
-    {"ClearAlliedPlayersForPlayer", MechanicsFunctions::ClearAlliedPlayersForPlayer},\
+    SCRIPT_FUNCTION("ClearAlliedPlayersForPlayer", MechanicsFunctions::ClearAlliedPlayersForPlayer),\
     \
-    {"GetMiscellaneousChangeType",  MechanicsFunctions::GetMiscellaneousChangeType},\
+    SCRIPT_FUNCTION("GetMiscellaneousChangeType", MechanicsFunctions::GetMiscellaneousChangeType),\
     \
-    {"GetMarkCell",                 MechanicsFunctions::GetMarkCell},\
-    {"GetMarkPosX",                 MechanicsFunctions::GetMarkPosX},\
-    {"GetMarkPosY",                 MechanicsFunctions::GetMarkPosY},\
-    {"GetMarkPosZ",                 MechanicsFunctions::GetMarkPosZ},\
-    {"GetMarkRotX",                 MechanicsFunctions::GetMarkRotX},\
-    {"GetMarkRotZ",                 MechanicsFunctions::GetMarkRotZ},\
-    {"GetSelectedSpellId",          MechanicsFunctions::GetSelectedSpellId},\
+    SCRIPT_FUNCTION("GetMarkCell", MechanicsFunctions::GetMarkCell),\
+    SCRIPT_FUNCTION("GetMarkPosX", MechanicsFunctions::GetMarkPosX),\
+    SCRIPT_FUNCTION("GetMarkPosY", MechanicsFunctions::GetMarkPosY),\
+    SCRIPT_FUNCTION("GetMarkPosZ", MechanicsFunctions::GetMarkPosZ),\
+    SCRIPT_FUNCTION("GetMarkRotX", MechanicsFunctions::GetMarkRotX),\
+    SCRIPT_FUNCTION("GetMarkRotZ", MechanicsFunctions::GetMarkRotZ),\
+    SCRIPT_FUNCTION("GetSelectedSpellId", MechanicsFunctions::GetSelectedSpellId),\
     \
-    {"DoesPlayerHavePlayerKiller",  MechanicsFunctions::DoesPlayerHavePlayerKiller},\
-    {"GetPlayerKillerPid",          MechanicsFunctions::GetPlayerKillerPid},\
-    {"GetPlayerKillerRefId",        MechanicsFunctions::GetPlayerKillerRefId},\
-    {"GetPlayerKillerRefNum",       MechanicsFunctions::GetPlayerKillerRefNum},\
-    {"GetPlayerKillerMpNum",        MechanicsFunctions::GetPlayerKillerMpNum},\
-    {"GetPlayerKillerName",         MechanicsFunctions::GetPlayerKillerName},\
+    SCRIPT_FUNCTION("DoesPlayerHavePlayerKiller", MechanicsFunctions::DoesPlayerHavePlayerKiller),\
+    SCRIPT_FUNCTION("GetPlayerKillerPid", MechanicsFunctions::GetPlayerKillerPid),\
+    SCRIPT_FUNCTION("GetPlayerKillerRefId", MechanicsFunctions::GetPlayerKillerRefId),\
+    SCRIPT_FUNCTION("GetPlayerKillerRefNum", MechanicsFunctions::GetPlayerKillerRefNum),\
+    SCRIPT_FUNCTION("GetPlayerKillerMpNum", MechanicsFunctions::GetPlayerKillerMpNum),\
+    SCRIPT_FUNCTION("GetPlayerKillerName", MechanicsFunctions::GetPlayerKillerName),\
     \
-    {"GetDrawState",                MechanicsFunctions::GetDrawState},\
-    {"GetSneakState",               MechanicsFunctions::GetSneakState},\
+    SCRIPT_FUNCTION("GetDrawState", MechanicsFunctions::GetDrawState),\
+    SCRIPT_FUNCTION("GetSneakState", MechanicsFunctions::GetSneakState),\
     \
-    {"SetMarkCell",                 MechanicsFunctions::SetMarkCell},\
-    {"SetMarkPos",                  MechanicsFunctions::SetMarkPos},\
-    {"SetMarkRot",                  MechanicsFunctions::SetMarkRot},\
-    {"SetSelectedSpellId",          MechanicsFunctions::SetSelectedSpellId},\
+    SCRIPT_FUNCTION("SetMarkCell", MechanicsFunctions::SetMarkCell),\
+    SCRIPT_FUNCTION("SetMarkPos", MechanicsFunctions::SetMarkPos),\
+    SCRIPT_FUNCTION("SetMarkRot", MechanicsFunctions::SetMarkRot),\
+    SCRIPT_FUNCTION("SetSelectedSpellId", MechanicsFunctions::SetSelectedSpellId),\
     \
-    {"AddAlliedPlayerForPlayer",    MechanicsFunctions::AddAlliedPlayerForPlayer},\
+    SCRIPT_FUNCTION("AddAlliedPlayerForPlayer", MechanicsFunctions::AddAlliedPlayerForPlayer),\
     \
-    {"SendMarkLocation",            MechanicsFunctions::SendMarkLocation},\
-    {"SendSelectedSpell",           MechanicsFunctions::SendSelectedSpell},\
-    {"SendAlliedPlayers",           MechanicsFunctions::SendAlliedPlayers},\
+    SCRIPT_FUNCTION("SendMarkLocation", MechanicsFunctions::SendMarkLocation),\
+    SCRIPT_FUNCTION("SendSelectedSpell", MechanicsFunctions::SendSelectedSpell),\
+    SCRIPT_FUNCTION("SendAlliedPlayers", MechanicsFunctions::SendAlliedPlayers),\
     \
-    {"Jail",                        MechanicsFunctions::Jail},\
-    {"Resurrect",                   MechanicsFunctions::Resurrect},\
+    SCRIPT_FUNCTION("Jail", MechanicsFunctions::Jail),\
+    SCRIPT_FUNCTION("Resurrect", MechanicsFunctions::Resurrect),\
     \
-    {"GetDeathReason",              MechanicsFunctions::GetDeathReason},\
-    {"GetPlayerKillerRefNumIndex",  MechanicsFunctions::GetPlayerKillerRefNumIndex}
+    SCRIPT_FUNCTION("GetDeathReason", MechanicsFunctions::GetDeathReason),\
+    SCRIPT_FUNCTION("GetPlayerKillerRefNumIndex", MechanicsFunctions::GetPlayerKillerRefNumIndex)
 
 class MechanicsFunctions
 {

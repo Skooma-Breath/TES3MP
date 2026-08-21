@@ -224,10 +224,12 @@ int wrapApplication(int (*innerApplication)(int argc, char *argv[]), int argc, c
     }
     catch (const std::exception& e)
     {
+#ifndef OPENMW_SERVER_BUILD
 #if (defined(__APPLE__) || defined(__linux) || defined(__unix) || defined(__posix))
         if (!isatty(fileno(stdin)))
 #endif
             SDL_ShowSimpleMessageBox(0, (appName + ": Fatal error").c_str(), e.what(), nullptr);
+#endif
 
         Log(Debug::Error) << "Error: " << e.what();
 

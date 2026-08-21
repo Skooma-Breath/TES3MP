@@ -19,7 +19,8 @@ void PacketPlayerSpellbook::Packet(RakNet::BitStream *newBitstream, bool send)
     if (send)
         count = static_cast<uint32_t>(player->spellbookChanges.spells.size());
 
-    RW(count, send);
+    if (!RWCount(count, send, 8192))
+        return;
 
     if (!send)
     {

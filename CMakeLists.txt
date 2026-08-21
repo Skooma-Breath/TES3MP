@@ -39,6 +39,10 @@ option(BUILD_WITH_CODE_COVERAGE "Enable code coverage with gconv" OFF)
 option(BUILD_UNITTESTS          "Enable Unittests with Google C++ Unittest" OFF)
 option(BUILD_BENCHMARKS         "Build benchmarks with Google Benchmark" OFF)
 option(BUILD_OPENMW_MP          "Build OpenMW-MP" ON)
+
+if(BUILD_OPENMW_MP AND NOT BUILD_OPENMW AND NOT BUILD_OPENCS)
+    add_definitions(-DOPENMW_SERVER_BUILD)
+endif()
 option(BUILD_BROWSER            "Build tes3mp Server Browser" ON)
 option(BUILD_MASTER             "Build tes3mp Master Server" OFF)
 
@@ -205,9 +209,11 @@ find_package(RakNet REQUIRED)
 include_directories(${RakNet_INCLUDES})
 
 # Dependencies
-find_package(OpenGL REQUIRED)
-
-find_package(LZ4 REQUIRED)
+# OpenGL and LZ4 are only linked by the client/OpenCS components.
+if (BUILD_OPENMW OR BUILD_OPENCS)
+    find_package(OpenGL REQUIRED)
+    find_package(LZ4 REQUIRED)
+endif()
 
 if (USE_QT)
     find_package(Qt5Core 5.9 REQUIRED) # Temporary adjustment for TES3MP CI
@@ -457,7 +463,9 @@ endif()
 # Don't require certain dependencies for the server
 ENDIF(BUILD_OPENMW OR BUILD_OPENCS)
 # End of tes3mp addition
-find_package(SDL2 2.0.9 REQUIRED)
+if (BUILD_OPENMW OR BUILD_OPENCS)
+    find_package(SDL2 2.0.9 REQUIRED)
+endif()
 # Start of tes3mp addition
 #
 # Don't require certain dependencies for the server
@@ -587,6 +595,9 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL GNU OR CMAKE_CXX_COMPILER_ID STREQUAL Clang)
     if (APPLE)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
         set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++")
+    elseif (UNIX)
+        # Full RELRO: resolve relocations at startup and make the GOT read-only.
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-z,relro,-z,now")
     endif()
 
     if (CMAKE_CXX_COMPILER_ID STREQUAL Clang AND NOT APPLE)

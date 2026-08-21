@@ -17,7 +17,8 @@ void PacketPlayerCooldowns::Packet(RakNet::BitStream *newBitstream, bool send)
     if (send)
         count = static_cast<uint32_t>(player->cooldownChanges.size());
 
-    RW(count, send);
+    if (!RWCount(count, send, 4096))
+        return;
 
     if (!send)
     {

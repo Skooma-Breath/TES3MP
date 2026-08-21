@@ -15,7 +15,8 @@ void mwmp::PacketPlayerAlly::Packet(RakNet::BitStream *newBitstream, bool send)
     if (send)
         count = static_cast<uint32_t>(player->alliedPlayers.size());
 
-    RW(count, send);
+    if (!RWCount(count, send, 1024))
+        return;
 
     if (!send)
     {
