@@ -24,6 +24,12 @@ LIBRARIES=( \
                        "libbz2.so" \
                        "libLinearMath.so" \
                        "libMyGUIEngine.so" \
+                       "libopenal.so" \
+                       "libavcodec.so" \
+                       "libavformat.so" \
+                       "libavutil.so" \
+                       "libswresample.so" \
+                       "libswscale.so" \
                        "libOpenThreads.so" \
                        "libosgAnimation.so" \
                        "libosgDB.so" \
@@ -77,10 +83,18 @@ for BIN in "${PACKAGE_BINARIES[@]}"; do
     cp -r ../$BIN .
 done
 
-git clone https://github.com/TES3MP/CoreScripts.git server/
+CORESCRIPTS_COMMIT="3e397a11eaf7d0d4ff08df4bb9925e67748b4db8"
+git clone --no-checkout https://github.com/TES3MP/CoreScripts.git server/
+git -C server checkout "$CORESCRIPTS_COMMIT"
+rm -rf server/.git
+
+# Preserve the TES3MP 0.8.1 compatibility identity for existing clients.
+curl -fsSL -L https://github.com/TES3MP/TES3MP/releases/download/tes3mp-0.8.1/tes3mp-server-GNU+Linux-x86_64-release-0.8.1-68954091c5-6da3fdea59.tar.gz -o /tmp/tes3mp-0.8.1.tar.gz
+tar -xzf /tmp/tes3mp-0.8.1.tar.gz -C /tmp TES3MP-server/resources/version
+cp /tmp/TES3MP-server/resources/version resources/version
 
 echo "Acquiring cjson . . ."
-curl  -o server/lib/cjson.dll -L https://github.com/DreamWeave-MP/lua-cjson/releases/download/Stable-CI/cjson-MinSizeRel.dll
+curl -fsSL -o server/lib/cjson.so -L https://github.com/DreamWeave-MP/lua-cjson/releases/download/Stable-CI/cjson-Linux.so
 
 
 # Create pre-launch script
@@ -145,10 +159,10 @@ EOF
   
   # Create the archive using COMPRESSED tar format
   echo "Creating compressed archive..."
-  tar czvf tes3mp-server.tar.gz -C tes3mp-build .
+  tar czvf tes3mp-linux-x64.tar.gz -C tes3mp-build .
 
   # Verify the archive
   echo "Package contents:"
-  tar tzvf tes3mp-server.tar.gz | head -20
+  tar tzvf tes3mp-linux-x64.tar.gz | head -20
   echo "Package created successfully!"
-  ls -lh tes3mp-server.tar.gz
+  ls -lh tes3mp-linux-x64.tar.gz

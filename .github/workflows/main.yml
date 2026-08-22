@@ -22,6 +22,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       - name: Verify CI files
         run: |
@@ -42,8 +44,6 @@ jobs:
       - name: Install Building Dependencies
         run: |
           sudo CI/install_debian_deps.sh gcc openmw-deps openmw-deps-dynamic
-          curl -o CrabNet.7z -L https://github.com/DreamWeave-MP/CrabNet/releases/download/Stable-CI/CrabNet-Linux-Release.7z
-          7z x -y CrabNet.7z -oextern/raknet
           sudo apt-get install -y libluajit-5.1-dev
 
       - name: Install Doxygen
@@ -142,11 +142,41 @@ jobs:
           # # Verify package contents
           # tar tzf tes3mp_linux.tar | grep bin/tes3mp-server
 
+      - name: Verify packaged Linux client
+        shell: bash
+        run: |
+          rm -rf package-smoke
+          mkdir package-smoke
+          tar -xzf tes3mp-linux-x64.tar.gz -C package-smoke
+          cd package-smoke
+          echo "Checking packaged client dependency resolution..."
+          /lib64/ld-linux-x86-64.so.2 --library-path "$PWD/lib" --list ./tes3mp.x86_64 | tee client-libs.txt
+          if grep -q "not found" client-libs.txt; then
+            echo "ERROR: packaged client has unresolved libraries"
+            exit 1
+          fi
+          echo "Running packaged client version smoke test..."
+          mkdir -p "$RUNNER_TEMP/tes3mp-client-smoke"
+          if ! command -v xvfb-run >/dev/null 2>&1; then sudo apt-get install -y xvfb; fi
+          xvfb-run -a env HOME=$RUNNER_TEMP/tes3mp-client-smoke ./tes3mp --resources $PWD/resources --version | tee client-version.txt
+          grep -q "0.47.0" client-version.txt
+          echo "Testing package in clean Ubuntu 22.04 container..."
+          docker run --rm -v "$PWD:/pkg:ro" ubuntu:22.04 bash -lc '
+            apt-get update -qq &&
+            DEBIAN_FRONTEND=noninteractive apt-get install -y -qq xvfb ffmpeg libopenal1 libsdl2-2.0-0 libgl1 libx11-6 liblz4-1 zlib1g >/dev/null &&
+            cd /pkg &&
+            /lib64/ld-linux-x86-64.so.2 --library-path "$PWD/lib" --list ./tes3mp.x86_64 >/tmp/client-libs.txt &&
+            ! grep -q "not found" /tmp/client-libs.txt &&
+            mkdir -p /tmp/tes3mp-home &&
+            xvfb-run -a env HOME=/tmp/tes3mp-home ./tes3mp --resources "$PWD/resources" --version | tee /tmp/client-version.txt &&
+            grep -q "0.47.0" /tmp/client-version.txt
+          '
+
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          path: tes3mp-server.tar.gz
-          name: tes3mp-server-linux
+          path: tes3mp-linux-x64.tar.gz
+          name: tes3mp-linux-x64
 
   # MacOS:
   #   runs-on: macos-latest

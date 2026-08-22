@@ -36,6 +36,44 @@ jobs:
           max-size: 1000M
           variant: sccache
 
+      - name: Activate MSVC for LuaJIT
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
+      - name: Clone LuaJIT source
+        shell: bash
+        run: |
+          rm -rf deps/LuaJIT-source
+          git clone https://github.com/Skooma-Breath/LuaJIT.git deps/LuaJIT-source
+          git -C deps/LuaJIT-source checkout 726df74db07338ad7008bf62d0987bed5bb4ac66
+
+      - name: Build LuaJIT development files
+        shell: cmd
+        working-directory: deps/LuaJIT-source/src
+        run: |
+          call msvcbuild.bat
+          dir lua51.dll lua51.lib lua.h
+
+      - name: Expose LuaJIT paths
+        shell: bash
+        run: |
+          LUAJIT_ROOT="$(pwd)/deps/LuaJIT-source/src"
+          test -f "$LUAJIT_ROOT/lua.h"
+          test -f "$LUAJIT_ROOT/lua51.lib"
+          test -f "$LUAJIT_ROOT/lua51.dll"
+          echo "LUAJIT_INCLUDE_DIR=$LUAJIT_ROOT" >> "$GITHUB_ENV"
+          echo "LUAJIT_LIBRARY=$LUAJIT_ROOT/lua51.lib" >> "$GITHUB_ENV"
+          echo "LUAJIT_DLL=$LUAJIT_ROOT/lua51.dll" >> "$GITHUB_ENV"
+
+      - name: Install Qt 5.15.2
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: 5.15.2
+          arch: win64_msvc2019_64
+          dir: ${{ github.workspace }}/deps
+          cache: true
+
       - name: Configure
         env:
           CI: true

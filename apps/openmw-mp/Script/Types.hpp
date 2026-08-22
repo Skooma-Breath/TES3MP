@@ -109,7 +109,7 @@ struct ScriptFunctionPointer : public ScriptIdentity
 
     AddressResolver addressResolver;
 
-    template<auto FunctionAddress>
+    template<typename FunctionType, FunctionType FunctionAddress>
     static void* ResolveAddress()
     {
 #if (!defined(__clang__) && defined(__GNUC__))
@@ -137,14 +137,14 @@ struct ScriptFunctionData
     constexpr ScriptFunctionData(const char* name, ScriptFunctionPointer func) : name(name), func(func) {}
 };
 
-template<auto FunctionAddress>
+template<typename FunctionType, FunctionType FunctionAddress>
 constexpr ScriptFunctionData MakeScriptFunctionData(const char* name)
 {
     return ScriptFunctionData(name, ScriptFunctionPointer(FunctionAddress,
-        &ScriptFunctionPointer::ResolveAddress<FunctionAddress>));
+        &ScriptFunctionPointer::ResolveAddress<FunctionType, FunctionAddress>));
 }
 
-#define SCRIPT_FUNCTION(name, function) MakeScriptFunctionData<&function>(name)
+#define SCRIPT_FUNCTION(name, function) MakeScriptFunctionData<decltype(&function), &function>(name)
 
 struct ScriptCallbackData
 {

@@ -50,12 +50,18 @@ jobs:
         with:
           arch: x64
 
+      - name: Clone LuaJIT source
+        run: |
+          rm -rf luajit-src
+          git clone https://github.com/Skooma-Breath/LuaJIT.git luajit-src
+          git -C luajit-src checkout 726df74db07338ad7008bf62d0987bed5bb4ac66
+
       - name: Build LuaJIT (pre-configure)
         shell: cmd
+        working-directory: luajit-src/src
         run: |
-          git clone --depth 1 https://github.com/Skooma-Breath/LuaJIT.git luajit-src
-          cd luajit-src\src
           call msvcbuild.bat
+          dir lua51.dll lua51.lib lua.h
 
       - name: Verify LuaJIT and export paths
         run: |
@@ -77,6 +83,14 @@ jobs:
           echo "Found include: $LUAJIT_INCLUDE"
           echo "Found lib:     $LUAJIT_LIB"
           echo "Found dll:     $LUAJIT_DLL"
+
+      - name: Install Qt 5.15.2
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: 5.15.2
+          arch: win64_msvc2019_64
+          dir: ${{ github.workspace }}/deps
+          cache: true
 
       - name: Configure
         env:
@@ -239,7 +253,7 @@ jobs:
       - name: Download CoreScripts
         run: |
           curl -fsSL -L \
-            "https://github.com/TES3MP/CoreScripts/archive/refs/heads/0.8.1.zip" \
+            "https://github.com/TES3MP/CoreScripts/archive/3e397a11eaf7d0d4ff08df4bb9925e67748b4db8.zip" \
             -o corescripts.zip
 
           mkdir -p corescripts_staging
@@ -280,3 +294,4 @@ jobs:
             Automated Windows build from branch `${{ github.ref_name }}` @ ${{ github.sha }}
           prerelease: false
           files: tes3mp-windows-x64.zip
+          overwrite_files: true
